@@ -63,7 +63,13 @@ async def lifespan(app: FastAPI):
     # 共享相同的 provider 参数，而不修改依赖包。
     install_zleap_sag_extract_compat()
     litellm_policy = install_litellm_policy(settings)
+
+    # 未配置向量模型 API 时，自动装载本地向量模型
+    from sag_api.sag.local_embedding_patch import apply_local_embedding_patch
+    apply_local_embedding_patch()
+
     app.state.engine_manager = EngineManager(settings)
+
     app.state.llm = LLMClient(settings)
     app.state.agent_runtime = AgentRuntime()
     await app.state.agent_runtime.start()
@@ -71,6 +77,19 @@ async def lifespan(app: FastAPI):
         SessionLocal, app.state.engine_manager, concurrency=settings.job_concurrency
     )
     await app.state.job_queue.start()
+
+    # 初始化自生长 Wiki 结构与 Skill 技能注册表
+    from sag_api.skills.registry import global_skill_registry
+    from sag_api.wiki.auto_grow import global_auto_grow_engine
+    from sag_api.wiki.manager import global_wiki_manager
+
+    global_wiki_manager.initialize()
+    await global_skill_registry.load_all()
+
+    # 启动时后台异步扫描知识库并自动生成/更新 Wiki 页面
+    asyncio.create_task(global_auto_grow_engine.rebuild_wiki_from_knowledge_base())
+
+
 
     # 后台预热最近使用的信源引擎（不阻塞启动；失败不影响服务）
     warmup_task = asyncio.create_task(_warmup_engines(app.state.engine_manager))

@@ -18,7 +18,13 @@ from typing import Annotated, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    from pydantic_settings import NoDecode
+except ImportError:
+    NoDecode = object
+
 
 from sag_api.core.model_providers import ModelProviderId, get_model_provider
 from sag_api.enums import SearchStrategy, normalize_search_strategy

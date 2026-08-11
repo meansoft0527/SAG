@@ -4,14 +4,23 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-from zleap.sag.exceptions import (
-    ConfigError,
-    InvalidInputError,
-    NonRetryableError,
-    ResourceNotFoundError,
-    RetryableError,
-    SagError,
-)
+try:
+    from zleap.sag.exceptions import (
+        ConfigError,
+        InvalidInputError,
+        NonRetryableError,
+        ResourceNotFoundError,
+        RetryableError,
+        SagError,
+    )
+except ModuleNotFoundError:
+    class SagError(Exception): pass
+    class ConfigError(SagError): pass
+    class InvalidInputError(SagError): pass
+    class NonRetryableError(SagError): pass
+    class ResourceNotFoundError(SagError): pass
+    class RetryableError(SagError): pass
+
 
 from sag_api.core.error_taxonomy import ErrorCode, ErrorLayer, ErrorStage
 from sag_api.core.errors import (

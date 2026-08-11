@@ -19,10 +19,20 @@ import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+    UTC = timezone.utc
+from datetime import datetime
+
 from typing import TYPE_CHECKING, Any
 
-from zleap.sag import DataEngine
+try:
+    from zleap.sag import DataEngine
+except ModuleNotFoundError:
+    DataEngine = Any
+
 
 from sag_api.core.config import Settings
 from sag_api.core.error_taxonomy import ErrorLayer, ErrorStage

@@ -2,6 +2,14 @@
 
 from sag_api.db.models.agent import Agent, AgentBinding, Message, Thread
 from sag_api.db.models.document import Document
+from sag_api.db.models.extensions import (
+    AgentTaskModel,
+    ConnectorModel,
+    MCPServerModel,
+    SkillModel,
+    WikiChangelogModel,
+    WikiPageModel,
+)
 from sag_api.db.models.job import Job
 from sag_api.db.models.setting import Setting
 from sag_api.db.models.source import Source
@@ -29,4 +37,11 @@ __all__ = [
     "UniverseDirtySource",
     "UniverseOverview",
     "UniversePartition",
+    "SkillModel",
+    "WikiPageModel",
+    "WikiChangelogModel",
+    "ConnectorModel",
+    "AgentTaskModel",
+    "MCPServerModel",
 ]
+

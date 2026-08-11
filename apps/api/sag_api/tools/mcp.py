@@ -21,7 +21,11 @@ from urllib.parse import urlsplit
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.client.streamable_http import streamablehttp_client
+try:
+    from mcp.client.streamable_http import streamablehttp_client
+except ImportError:
+    from mcp.client.streamable_http import streamable_http_client as streamablehttp_client
+
 
 from sag_api.core.error_taxonomy import ErrorCode
 from sag_api.core.logging import get_logger

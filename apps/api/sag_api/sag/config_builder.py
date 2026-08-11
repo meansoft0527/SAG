@@ -7,8 +7,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from zleap.sag import EngineConfig
-from zleap.sag.config import EmbeddingConfig, LLMConfig, RelationalConfig
+try:
+    from zleap.sag import EngineConfig
+    from zleap.sag.config import EmbeddingConfig, LLMConfig, RelationalConfig
+except ModuleNotFoundError:
+    EngineConfig = Any
+    EmbeddingConfig = Any
+    LLMConfig = Any
+    RelationalConfig = Any
+
 
 from sag_api.core.config import Settings
 

@@ -12,12 +12,21 @@ from collections.abc import Awaitable, Callable, Mapping
 from pathlib import Path
 from typing import Any, Literal
 
-from zleap.sag import DataEngine
-from zleap.sag.modules.extract.config import ExtractConfig
-from zleap.sag.modules.extract.extractor import EventExtractor
-from zleap.sag.modules.load.config import DocumentLoadConfig
-from zleap.sag.modules.load.loader import DocumentLoader
-from zleap.sag.modules.load.parser import MarkdownParser
+try:
+    from zleap.sag import DataEngine
+    from zleap.sag.modules.extract.config import ExtractConfig
+    from zleap.sag.modules.extract.extractor import EventExtractor
+    from zleap.sag.modules.load.config import DocumentLoadConfig
+    from zleap.sag.modules.load.loader import DocumentLoader
+    from zleap.sag.modules.load.parser import MarkdownParser
+except ModuleNotFoundError:
+    DataEngine = Any
+    ExtractConfig = Any
+    EventExtractor = Any
+    DocumentLoadConfig = Any
+    DocumentLoader = Any
+    class MarkdownParser: pass
+
 
 from sag_api.core.logging import get_logger
 from sag_api.sag.dto import ProcessCheckpoint, ProcessOutcome
@@ -173,9 +182,14 @@ def _value_overflows_sqlite_integer(value: object, entity_type: object) -> bool:
         return not _SQLITE_INTEGER_MIN <= value <= _SQLITE_INTEGER_MAX
     if not isinstance(value, str):
         return False
-    from zleap.sag.modules.extract.parser import EntityValueParser
+    try:
+        from zleap.sag.modules.extract.parser import EntityValueParser
+    except ModuleNotFoundError:
+        return False
 
-    parse = getattr(EntityValueParser, "_sag_original_parse", EntityValueParser.parse)
+    parse = getattr(EntityValueParser, "_sag_original_parse", getattr(EntityValueParser, "parse", None))
+    if not callable(parse):
+        return False
     parsed = parse(EntityValueParser(), value, entity_type=entity_type if isinstance(entity_type, str) else None)
     return bool(
         parsed
@@ -184,10 +198,13 @@ def _value_overflows_sqlite_integer(value: object, entity_type: object) -> bool:
     )
 
 
+
 def _install_sqlite_integer_guard() -> None:
     """Guard zleap-sag's parser at the same boundary that persists Entity.int_value."""
-
-    from zleap.sag.modules.extract.parser import EntityValueParser
+    try:
+        from zleap.sag.modules.extract.parser import EntityValueParser
+    except ModuleNotFoundError:
+        return
 
     if getattr(EntityValueParser, "_sag_sqlite_integer_guard_installed", False):
         return
@@ -203,6 +220,7 @@ def _install_sqlite_integer_guard() -> None:
     EntityValueParser._sag_original_parse = original_parse
     EntityValueParser._sag_sqlite_integer_guard_installed = True
     log.warning("已启用 zleap-sag SQLite 整数范围兼容保护")
+
 
 
 _install_sqlite_integer_guard()

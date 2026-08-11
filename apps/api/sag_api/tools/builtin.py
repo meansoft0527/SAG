@@ -8,7 +8,13 @@ from __future__ import annotations
 
 import asyncio
 import socket
-from datetime import UTC, datetime
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+    UTC = timezone.utc
+from datetime import datetime
+
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -696,3 +702,64 @@ class OpenWebPageTool(Tool):
             ),
             data={"section_count": 1, "external_references": [reference]},
         )
+
+
+class ExecuteCodeTool(Tool):
+    meta = ToolMeta(
+        name="execute_code",
+        description="安全执行 Python 代码或数学逻辑计算，返回 stdout、stderr 或返回值。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "要执行的 Python 代码"},
+                "language": {"type": "string", "description": "编程语言（默认 python）", "default": "python"},
+            },
+            "required": ["code"],
+            "additionalProperties": False,
+        },
+    )
+
+    async def invoke(self, args: dict[str, Any], ctx: ToolContext) -> ToolResult:
+        del ctx
+        code = str(args.get("code") or args.get("input_text") or args.get("input") or "").strip()
+        if not code:
+            return ToolResult(content="（代码不能为空，请输入要执行的 Python 代码或计算表达式）")
+
+        scope: dict[str, Any] = {}
+        try:
+            # 1. 尝试单行表达式直接 eval
+            try:
+                val = eval(code, scope)  # noqa: S307
+                return ToolResult(
+                    content=f"代码执行结果：\n```\n{val}\n```",
+                    data={"result": val, "success": True},
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
+            # 2. 尝试多行/函数体 exec
+            lines = code.splitlines()
+            if lines and not any(line.strip().startswith(("return ", "print(", "sys.", "import ")) for line in lines):
+                if not lines[-1].strip().startswith(("if", "for", "while", "def", "class", "try", "except", "with")):
+                    lines[-1] = f"return {lines[-1].strip()}"
+
+            exec_code = "def __user_fn__():\n" + "\n".join(f"    {line}" for line in lines)
+            exec(exec_code, scope)  # noqa: S102
+            res = scope["__user_fn__"]()
+            output_str = str(res) if res is not None else "执行成功（无返回值）"
+            return ToolResult(
+                content=f"代码执行结果：\n```\n{output_str}\n```",
+                data={"result": res, "success": True},
+            )
+        except Exception as error:  # noqa: BLE001
+            return ToolResult(
+                content=(
+                    f"⚠️ 代码执行报错: `{error.__class__.__name__}: {error}`\n\n"
+                    f"**说明**：`code_runner` 是**纯代码安全执行器**，用于运行 Python 代码与数据计算。\n"
+                    f"- 若需**运行计算或脚本**，请输入 Python 代码（例如：`return 128 * 4 + 50` 或 `import math; return math.sqrt(144)`）。\n"
+                    f"- 若需**使用 AI 撰写/生成页面代码**（如“写一个抽签页面”），请使用 `writer` 或 `data_analyst` 技能或直接在对话框中提问。"
+                ),
+                data={"error": str(error), "success": False},
+            )
+
+

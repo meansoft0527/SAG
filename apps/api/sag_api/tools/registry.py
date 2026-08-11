@@ -5,6 +5,7 @@ from __future__ import annotations
 from sag_api.core.errors import NotFoundError
 from sag_api.tools.base import Tool
 from sag_api.tools.builtin import (
+    ExecuteCodeTool,
     GetEntityTool,
     GetTimeTool,
     OpenWebPageTool,
@@ -49,4 +50,6 @@ registry.register(GetEntityTool())
 registry.register(GetTimeTool())
 registry.register(WebSearchTool())
 registry.register(OpenWebPageTool())
+registry.register(ExecuteCodeTool())
 # MCP 远端工具在运行时按 Agent 绑定动态注入。
+

@@ -281,3 +281,13 @@ class LLMClient:
                     await self._close_stream(stream)
                 except Exception as e:  # noqa: BLE001
                     log.debug("LLM 流关闭失败：%s", e)
+
+    async def astream_chat(self, system: str = "", prompt: str = "") -> AsyncIterator[str]:
+        """按 system + prompt 格式进行纯文本流式对话（Skill 与模板专用）。"""
+        messages = []
+        if system and system.strip():
+            messages.append({"role": "system", "content": system.strip()})
+        messages.append({"role": "user", "content": prompt or ""})
+        async for token in self.stream_complete(messages):
+            yield token
+
