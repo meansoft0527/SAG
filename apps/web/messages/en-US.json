@@ -81,8 +81,11 @@
     "search": "Search",
     "answer": "Chat",
     "knowledge": "Knowledge",
+    "skills": "Skills",
+    "wiki": "Auto-Grow Wiki",
     "settings": "Settings"
   },
+
   "Settings": {
     "title": "Settings",
     "description": "Manage your account, default assistant, model connection, knowledge settings, integrations, interface, and graph preferences.",

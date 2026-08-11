@@ -1,4 +1,4 @@
-export type WorkspaceSection = "search" | "answer" | "knowledge";
+export type WorkspaceSection = "search" | "answer" | "knowledge" | "skills" | "wiki";
 
 export interface WorkspaceSectionDefinition {
   id: WorkspaceSection;
@@ -7,24 +7,29 @@ export interface WorkspaceSectionDefinition {
 }
 
 /**
- * 工作台能力的单一入口配置。normal 与 mini 只改变呈现方式，不再各自维护菜单。
+ * 工作台能力的单一入口配置。
  */
 export const WORKSPACE_SECTIONS: readonly WorkspaceSectionDefinition[] = [
   { id: "search", href: "/search", shortcut: "⌘K" },
   { id: "answer", href: "/chat", shortcut: "⌘J" },
   { id: "knowledge", href: "/knowledge" },
+  { id: "skills", href: "/skills" },
+  { id: "wiki", href: "/wiki" },
 ];
 
 export function isWorkspaceSection(value: unknown): value is WorkspaceSection {
-  return value === "search" || value === "answer" || value === "knowledge";
+  return value === "search" || value === "answer" || value === "knowledge" || value === "skills" || value === "wiki";
 }
 
 export function workspaceSectionFromPathname(pathname: string): WorkspaceSection | null {
   if (pathname === "/search" || pathname.startsWith("/search/")) return "search";
   if (pathname === "/chat" || pathname.startsWith("/chat/")) return "answer";
   if (pathname === "/knowledge" || pathname.startsWith("/knowledge/")) return "knowledge";
+  if (pathname === "/skills" || pathname.startsWith("/skills/")) return "skills";
+  if (pathname === "/wiki" || pathname.startsWith("/wiki/")) return "wiki";
   return null;
 }
+
 
 export function workspaceSectionDefinition(section: WorkspaceSection) {
   return WORKSPACE_SECTIONS.find((item) => item.id === section)!;

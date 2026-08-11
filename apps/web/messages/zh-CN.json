@@ -81,8 +81,11 @@
     "search": "搜索",
     "answer": "问答",
     "knowledge": "知识库",
+    "skills": "技能扩展",
+    "wiki": "自生长 Wiki",
     "settings": "设置"
   },
+
   "Settings": {
     "title": "设置",
     "description": "管理账户、默认助手、模型连接、知识库参数、集成、界面和图谱偏好。",

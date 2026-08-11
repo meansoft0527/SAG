@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUp, Check, Copy, FileUp, Globe2, ImagePlus, Library, Plus, RotateCcw, Square, Trash2, X } from "lucide-react";
+import { ArrowUp, Check, Copy, FileUp, Globe2, ImagePlus, Library, Plus, RotateCcw, Sparkles, Square, Trash2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+
 
 import { toolArgumentsPreview } from "@/lib/agent-run-activity";
 import { api } from "@/lib/api";
@@ -204,15 +205,20 @@ export function ConversationPanel({
     useConversationComposer(sessionId);
   const imagesRef = React.useRef(images);
   const [sources, setSources] = React.useState<Source[]>([]);
+  const [skills, setSkills] = React.useState<Array<{ name: string; description: string; skill_type: string }>>([]);
   const [mentionOpen, setMentionOpen] = React.useState(false);
   const [mentionIdx, setMentionIdx] = React.useState(0);
+  const [slashOpen, setSlashOpen] = React.useState(false);
+  const [slashIdx, setSlashIdx] = React.useState(0);
   const [uploading, setUploading] = React.useState(false);
   const uploadingRef = React.useRef(false);
   const [stepsCollapsed, setStepsCollapsed] = React.useState(true);
   const mentionListRef = React.useRef<HTMLDivElement>(null);
+  const slashListRef = React.useRef<HTMLDivElement>(null);
   const docRef = React.useRef<HTMLInputElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
   const composingRef = React.useRef(false);
   const compositionCommitGuardRef = React.useRef(false);
   const compositionCommitGuardTimerRef = React.useRef<number | null>(null);
@@ -272,6 +278,43 @@ export function ConversationPanel({
       ?.scrollIntoView({ block: "nearest" });
   }, [mentionIdx]);
 
+  const slashQuery = React.useMemo(() => {
+    if (!slashOpen) return "";
+    const slash = input.lastIndexOf("/");
+    return slash >= 0 ? input.slice(slash + 1) : "";
+  }, [slashOpen, input]);
+
+  const slashMatches = React.useMemo(() => {
+    const q = slashQuery.trim().toLowerCase();
+    return q
+      ? skills.filter(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            s.description.toLowerCase().includes(q)
+        )
+      : skills;
+  }, [skills, slashQuery]);
+
+  React.useEffect(() => setSlashIdx(0), [slashQuery]);
+  React.useEffect(() => {
+    slashListRef.current
+      ?.querySelector(`[data-idx="${slashIdx}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [slashIdx]);
+
+  const selectSlash = React.useCallback(
+    (skill: { name: string; description: string }) => {
+      setInput((v) => {
+        const slash = v.lastIndexOf("/");
+        const prefix = slash >= 0 ? v.slice(0, slash) : v;
+        return `${prefix}/${skill.name} `;
+      });
+      setSlashOpen(false);
+      textareaRef.current?.focus();
+    },
+    [setInput],
+  );
+
   const selectMention = React.useCallback(
     (src: { id: string; name: string }) => {
       setScoped((p) =>
@@ -286,6 +329,7 @@ export function ConversationPanel({
     },
     [setInput, setScoped],
   );
+
   const toggleTranscriptSteps = React.useCallback(
     () => setStepsCollapsed((value) => !value),
     [],
@@ -447,7 +491,15 @@ export function ConversationPanel({
 
   React.useEffect(() => {
     api.listSources().then(setSources).catch(() => {});
+    const apiHost = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    fetch(`${apiHost}/api/v1/skills`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setSkills(data.filter((s: any) => s.enabled));
+      })
+      .catch(() => {});
   }, []);
+
 
   // 上下文用量估算：CJK ≈1 token/字，其余 ≈1 token/4 字符（无 tokenizer 的专业近似）
   const ctxTokens = React.useMemo(() => {
@@ -792,6 +844,41 @@ export function ConversationPanel({
               })}
             </div>
           )}
+          {slashOpen && (
+            <div
+              ref={slashListRef}
+              className="absolute bottom-full left-3 z-20 mb-2 max-h-60 w-80 overflow-y-auto rounded-xl border bg-card p-1.5 shadow-lift backdrop-blur-md"
+            >
+              <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 border-b mb-1">
+                <Sparkles className="size-3.5" />
+                <span>指定技能 (Slash Skill Commands)</span>
+              </div>
+              {slashMatches.length === 0 && (
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">未找到匹配技能</p>
+              )}
+              {slashMatches.map((skill, i) => (
+                <button
+                  key={skill.name}
+                  type="button"
+                  data-idx={i}
+                  onMouseEnter={() => setSlashIdx(i)}
+                  onClick={() => selectSlash(skill)}
+                  className={cn(
+                    "flex w-full flex-col gap-0.5 rounded-lg px-2.5 py-2 text-left outline-none transition-colors",
+                    i === slashIdx ? "bg-indigo-50 dark:bg-indigo-950/40" : "hover:bg-muted/60",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-bold text-foreground">/{skill.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-mono">
+                      {skill.skill_type}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground line-clamp-1">{skill.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <input
             ref={fileRef}
             type="file"
@@ -840,6 +927,13 @@ export function ConversationPanel({
                 setInput(v);
                 if (v.endsWith("@")) {
                   setMentionOpen(true);
+                  setSlashOpen(false);
+                } else if (v.endsWith("/")) {
+                  setSlashOpen(true);
+                  setMentionOpen(false);
+                } else if (slashOpen) {
+                  const slash = v.lastIndexOf("/");
+                  if (slash < 0 || /\s/.test(v.slice(slash + 1))) setSlashOpen(false);
                 } else if (mentionOpen) {
                   const at = v.lastIndexOf("@");
                   if (at < 0 || /\s/.test(v.slice(at + 1))) setMentionOpen(false);
@@ -847,6 +941,29 @@ export function ConversationPanel({
               }}
               onKeyDown={(e) => {
                 if (isComposingKeyEvent(e)) return;
+
+                if (slashOpen) {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setSlashIdx((i) => Math.min(i + 1, Math.max(slashMatches.length - 1, 0)));
+                    return;
+                  }
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setSlashIdx((i) => Math.max(i - 1, 0));
+                    return;
+                  }
+                  if (e.key === "Enter" || e.key === "Tab") {
+                    e.preventDefault();
+                    const pick = slashMatches[slashIdx];
+                    if (pick) selectSlash(pick);
+                    return;
+                  }
+                  if (e.key === "Escape") {
+                    setSlashOpen(false);
+                    return;
+                  }
+                }
 
                 if (mentionOpen) {
                   if (e.key === "ArrowDown") {
@@ -872,6 +989,7 @@ export function ConversationPanel({
                 }
                 onKeyDown(e);
               }}
+
               onPaste={(e) => {
                 if (e.clipboardData?.files?.length) {
                   e.preventDefault();

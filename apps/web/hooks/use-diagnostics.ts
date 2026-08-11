@@ -14,9 +14,12 @@ import {
 
 export type { DiagEntry, DiagEnvironment, DiagEventType, DiagExport, DiagLogFile };
 
+const EMPTY_ENTRIES: DiagEntry[] = [];
+
 function emptySnapshot(): DiagEntry[] {
-  return [];
+  return EMPTY_ENTRIES;
 }
+
 
 /**
  * React hook wrapping the global DiagnosticsStore singleton.

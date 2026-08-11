@@ -319,8 +319,9 @@ function buildRadialPositions(slice: EventEntityGraphSlice, locale: string) {
   const tau = Math.PI * 2;
   const positions = new Map<string, GraphPoint>();
   const eventCount = slice.events.length;
+  // 采用平滑平方根缩放并增加 1200px 安全上限，防止几千节点时半径爆发增长至几万像素导出视口
   const eventRadius =
-    eventCount <= 1 ? 0 : Math.max(250, (eventCount * 220 * 1.16) / tau);
+    eventCount <= 1 ? 0 : Math.min(1200, Math.max(280, Math.sqrt(eventCount) * 75));
   const eventAngles = new Map<string, number>();
 
   slice.events.forEach((event, index) => {
@@ -367,7 +368,7 @@ function buildRadialPositions(slice: EventEntityGraphSlice, locale: string) {
     });
   }
 
-  const entityRadius = Math.max(360, eventRadius + 390);
+  const entityRadius = Math.min(1550, eventRadius + Math.min(320, 220 + Math.sqrt(entities.length) * 4));
   entities.forEach(({ entity, angle }) => {
     positions.set(eventEntityNodeId("entity", entity.id), {
       x: Math.cos(angle) * entityRadius,
@@ -376,6 +377,7 @@ function buildRadialPositions(slice: EventEntityGraphSlice, locale: string) {
   });
   return positions;
 }
+
 
 function collisionRadius(kind: GraphKind) {
   return kind === "event" ? 126 : 80;
@@ -605,15 +607,15 @@ export function EventEntityGraph({
       }
       toolbarActions={toolbarActions}
       heightClassName="h-full min-h-0"
-      fitPadding={0.18}
-      fitMinZoom={0.12}
-      minZoom={0.08}
-      maxZoom={1.8}
+      fitPadding={0.08}
+      fitMinZoom={0.005}
+      minZoom={0.002}
+      maxZoom={2.0}
       elementsSelectable
-      onlyRenderVisibleElements
       refreshKey={`${slice.relations.length}-${String(refreshKey)}`}
       ariaLabel={t("aria")}
       flowClassName={flowClassName}
+
       onPaneClick={() => setSelection(null)}
       onNodeClick={(_event, node) => {
         const data = node.data as GraphNodeData;

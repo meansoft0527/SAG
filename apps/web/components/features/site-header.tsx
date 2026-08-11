@@ -27,13 +27,16 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 function sectionLabel(
   pathname: string,
-  labels: { search: string; answer: string; knowledge: string; settings: string },
+  labels: Record<string, string>,
 ): string {
   const workspaceSection = workspaceSectionFromPathname(pathname);
-  if (workspaceSection) return labels[workspaceSection];
-  if (pathname === "/settings" || pathname.startsWith("/settings/")) return labels.settings;
+  if (workspaceSection && labels[workspaceSection]) return labels[workspaceSection];
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) return labels.settings || PRODUCT_NAME;
+  if (pathname === "/skills") return "技能扩展";
+  if (pathname === "/wiki") return "自生长 Wiki";
   return PRODUCT_NAME;
 }
+
 
 export function SiteHeader() {
   const t = useTranslations("SiteHeader");
