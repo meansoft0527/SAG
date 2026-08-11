@@ -1,0 +1,18 @@
+name: "web_researcher"
+version: "1.0.0"
+description: "深度联网调研技能 —— 自动检索网页与知识库并整合生成研究报告"
+type: "workflow"
+enabled: true
+
+triggers:
+  keywords: ["深度调研", "联网研究", "竞品分析", "research"]
+
+workflow:
+  - step: search_web
+    tool: web_search
+    input:
+      query: "{{query}}"
+  - step: search_kb
+    tool: search_context
+    input:
+      query: "{{query}}"

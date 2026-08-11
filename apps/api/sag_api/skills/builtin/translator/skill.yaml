@@ -1,0 +1,12 @@
+name: "translator"
+version: "1.0.0"
+description: "精细多语言翻译与本地化工具"
+type: "prompt"
+enabled: true
+
+triggers:
+  keywords: ["翻译", "translate", "改成英文", "改成中文", "译成"]
+
+prompts:
+  system: "prompts/system.md"
+  user: "prompts/user.md"

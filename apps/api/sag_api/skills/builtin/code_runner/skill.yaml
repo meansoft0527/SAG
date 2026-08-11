@@ -1,0 +1,9 @@
+name: "code_runner"
+version: "1.0.0"
+description: "代码执行技能 —— 运行并计算逻辑代码"
+type: "tool"
+enabled: true
+tool: "execute_code"
+
+triggers:
+  keywords: ["运行代码", "执行代码", "code_runner"]

@@ -1,0 +1,12 @@
+name: "writer"
+version: "1.0.0"
+description: "智能公文、周报、邮件与文章撰写助手"
+type: "prompt"
+enabled: true
+
+triggers:
+  keywords: ["写一份", "撰写", "帮我写", "周报", "文章", "起草"]
+
+prompts:
+  system: "prompts/system.md"
+  user: "prompts/user.md"
