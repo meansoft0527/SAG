@@ -4,6 +4,24 @@
 
 ## Unreleased
 
+## v0.0.1 · 2026-08-11
+
+首个公开版本（初始发布）。
+
+### 新功能
+- **Agent 编排与多步规划器 (TaskPlanner)**：支持复杂任务分解与多步骤顺序执行，内置任务队列与执行追踪。
+- **Skill 声明式扩展系统**：支持 Prompt / Tool / Workflow / Composite 四类技能，配置热更新，内置 6 款常用技能（摘要、翻译、代码生成、数据分析、网页抓取、天气查询）。
+- **对话 `/` 斜杠命令触发技能**：在问答界面输入 `/` 可直接调用指定 Skill，无需代码改动即可扩展助手能力。
+- **自生长 Wiki（LLM Wiki Architecture）**：三层知识架构（Raw / Wiki / Schema），自动从知识库文档与对话问答中提炼 Concepts、Entities、Topics、Sources 四类结构化知识卡片；支持手动编辑与刷新索引一键全量重建。
+- **本地向量模型自动回退（Local Embedding Fallback）**：外部向量 API 失效（如 401 鉴权失败）时，系统自动无缝切换至本地 CPU 向量引擎（1536 维），文档上传与知识入库全程不中断；首次失败后自动锁定本地模式，不再重复调用已失效外部 API。
+- **连接器扩展系统（Connectors Ext）**：支持多源数据连接器热插拔注册与统一管理。
+
+### 修复
+- 修复 2D 知识图谱在节点数量较多（>900 节点）时布局半径过大导致画布全空白的问题（采用平滑开方缩放 + 上限封顶算法）。
+- 修复 `useSyncExternalStore` 的 `getServerSnapshot` 返回不稳定数组引用导致前端报错弹窗（改为稳定常量引用 `EMPTY_ENTRIES`）。
+- 修复 `site-header.tsx` 中 `WorkspaceSection` 类型不包含 `skills` 导致 TypeScript 编译失败的问题。
+- 修复 `skills/page.tsx` 中将 Python 的 `bool` 误用为 TypeScript 类型的编译错误。
+
 ## v1.5.3 · 2026-08-07
 
 - 助手消息新增 `status` / `error` 两列，失败或被取消时持久化已生成的 partial answer 与结构化错误，前端据此渲染独立失败气泡并支持页面刷新恢复；Message 的 SAEnum 使用 `values_callable` 确保按值存取，与 `server_default` 一致。

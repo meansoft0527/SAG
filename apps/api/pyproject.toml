@@ -1,6 +1,6 @@
 [project]
 name = "sag-api"
-version = "0.1.0"
+version = "0.0.1"
 description = "sag — 开源知识库平台后端（FastAPI + zleap-sag）"
 readme = { text = "SAG API — FastAPI backend for the SAG knowledge platform.", content-type = "text/markdown" }
 requires-python = ">=3.11"
@@ -26,7 +26,9 @@ dependencies = [
     "charset-normalizer>=3.3,<4",
     "mcp>=1.28,<2",
     "tzdata>=2024.1",
+    "pyyaml>=6.0",
 ]
+
 
 [project.optional-dependencies]
 postgres = ["asyncpg>=0.29", "zleap-sag[postgres]>=0.7.1"]

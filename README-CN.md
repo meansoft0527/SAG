@@ -44,9 +44,24 @@ https://github.com/user-attachments/assets/cae70570-3885-490f-9126-dea23dcb369c
 
 ### 更新日志
 
+**2026 年 8 月 11 日**
+
+全面完成 **个人智能体（Personal Agent Assistant）** 二次开发演进：
+- 增加 **Agent 编排与多步规划器 (`TaskPlanner`)**
+- 增加 **Skill 声明式扩展系统** (支持 Prompt/Tool/Workflow/Composite 技能及热更新，内置 6 款常用技能)
+- 增加 **LLM Wiki 三层自生长架构** (Raw/Wiki/AGENTS.md 三层规则与自动知识沉淀引擎)
+- 增加 **数据源扩展** (网页/Sitemap 抓取器、RSS/Atom 订阅解析器、MCP Client 客户端)
+- 详细架构与开发规范见项目文档：
+  - [系统部署启动与测试操作手册](docs/operations-manual.md)
+  - [智能体架构文档](docs/agent-architecture.md)
+  - [Skill 扩展开发规范](docs/skill-system.md)
+  - [LLM Wiki 自生长指南](docs/wiki-growth.md)
+
+
 **2026 年 7 月 31 日**
 
 发布 SAG 官方命令行客户端 [`@zleap-ai/sag-cli`](docs/sag-cli.md)。一条命令（`sag agent connect codex | claude-code`）即可把 SAG 知识库 MCP 挂载进 Codex 或 Claude Code，不再需要复制 JWT 或手改配置文件。下方「MCP 指南」已改以 CLI 为主要接入路径。
+
 
 **2026 年 7 月 14 日**
 
