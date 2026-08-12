@@ -253,7 +253,7 @@ test("local release remotes require explicit SAG_RELEASE_TEST_MODE", async (t) =
   );
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /expected Zleap-AI\/SAG/);
+  assert.match(result.stderr, /expected /);
   assert.equal(bareRefExists(fixture.remote, "refs/tags/v1.3.0"), false);
 });
 

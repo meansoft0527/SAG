@@ -982,9 +982,7 @@ async def test_deleting_one_active_document_temporarily_yields_and_resumes_its_p
         # SQLite can retain a writer briefly while cancelled background
         # refresh jobs unwind. Retry test cleanup so it cannot pollute the
         # following Universe contract test with this synthetic source.
-        from sqlalchemy.exc import OperationalError
-
-        for attempt in range(10):
+        for _attempt in range(10):
             try:
                 async with SessionLocal() as session:
                     source = await session.get(Source, source_id)
