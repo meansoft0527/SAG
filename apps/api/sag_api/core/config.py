@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     data_dir: str = "./.data/engine"  # zleap-sag data_dir（LanceDB + SQLite）
     upload_dir: str = "./.data/uploads"  # 上传原始文件落盘
     max_upload_mb: int = 25  # 单文件上传上限
-    job_concurrency: int = Field(default=1, ge=1, le=10)  # 后台处理并发（嵌入式模式设为1避免多线程写 LanceDB C 拓展崩溃）
+    job_concurrency: int = Field(default=1, ge=1, le=10)  # 后台处理并发（避免嵌入式 LanceDB 并发写崩溃）
     document_extract_concurrency: int = Field(default=30, ge=1, le=50)  # 单文档 chunk 抽取并发
     document_chunk_max_tokens: int = Field(default=1_000, ge=100, le=100_000)
     document_chunk_mode: Literal["standard", "heading_strict"] = "standard"
