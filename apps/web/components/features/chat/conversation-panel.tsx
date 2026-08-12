@@ -495,7 +495,7 @@ export function ConversationPanel({
     fetch(`${apiHost}/api/v1/skills`)
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) setSkills(data.filter((s: any) => s.enabled));
+        if (Array.isArray(data)) setSkills(data.filter((s: { enabled?: boolean }) => s.enabled));
       })
       .catch(() => {});
   }, []);

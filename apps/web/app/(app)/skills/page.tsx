@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, Plus, Play, ToggleLeft, ToggleRight, Trash2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Plus, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface SkillItem {
@@ -37,8 +37,8 @@ export default function SkillsPage() {
         const data = await res.json();
         setSkills(data);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // 忽略或处理异常
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export default function SkillsPage() {
         toast.success(`技能 ${name} 已${!currentEnabled ? "启用" : "禁用"}`);
         fetchSkills();
       }
-    } catch (e) {
+    } catch {
       toast.error("操作失败");
     }
   };
@@ -83,7 +83,7 @@ export default function SkillsPage() {
           setTestOutput((prev) => prev + decoder.decode(value));
         }
       }
-    } catch (e) {
+    } catch {
       setTestOutput("执行出错，请确认后端 API 已正常启动。");
     } finally {
       setRunning(false);
@@ -116,7 +116,7 @@ export default function SkillsPage() {
         setNewSkillPrompt("");
         fetchSkills();
       }
-    } catch (e) {
+    } catch {
       toast.error("创建失败");
     }
   };

@@ -48,7 +48,7 @@ export default function WikiPage() {
         setPageContent(data.content || "");
         setEditContent(data.content || "");
       }
-    } catch (e) {
+    } catch {
       toast.error("加载页面失败");
     }
   };
@@ -67,7 +67,7 @@ export default function WikiPage() {
         setPageContent(editContent);
         setIsEditing(false);
       }
-    } catch (e) {
+    } catch {
       toast.error("保存失败");
     }
   };
@@ -86,7 +86,7 @@ export default function WikiPage() {
         }
         fetchPages(category);
       }
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };
@@ -102,7 +102,7 @@ export default function WikiPage() {
         toast.success("已完成全量知识库扫描，成功自动沉淀 Wiki 概念与实体页面！");
         fetchPages(category);
       }
-    } catch (e) {
+    } catch {
       toast.error("刷新重建失败");
     } finally {
       setRebuilding(false);
