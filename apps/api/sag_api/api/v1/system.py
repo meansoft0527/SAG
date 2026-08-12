@@ -236,7 +236,7 @@ async def test_model_config(
         await llm.complete([{"role": "user", "content": "ping"}])
         return {
             "ok": True,
-            "message": f"生成模型连接成功 · {active.llm_provider} / {active.llm_model}",
+            "message": f"连接成功 · {active.llm_provider} / {active.llm_model}",
         }
     except ApiError as e:
         return {"ok": False, "message": e.message}
