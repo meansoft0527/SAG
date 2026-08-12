@@ -105,9 +105,13 @@ class WebSearchFixtureTool(HostTool):
 
 
 async def _setup(c):
+    import uuid
+
+    email = f"stream{uuid.uuid4().hex}@t.com"
     r = await c.post(
-        "/api/v1/auth/register", json={"email": f"stream{id(c)}@t.com", "password": "password123"}
+        "/api/v1/auth/register", json={"email": email, "password": "password123"}
     )
+    assert r.status_code == 201, f"register failed ({r.status_code}): {r.text}"
     H = {"Authorization": f"Bearer {r.json()['access_token']}"}
     a = (await c.get("/api/v1/agents/default", headers=H)).json()
     th = (await c.post(f"/api/v1/agents/{a['id']}/threads", headers=H, json={})).json()
