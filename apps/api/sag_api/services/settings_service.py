@@ -109,8 +109,6 @@ async def _load_row(session: AsyncSession, key: str = _KEY) -> Setting | None:
 def _normalize_overrides(overrides: dict) -> dict:
     """清理持久化配置，确保已下线或非法策略不会进入运行时。"""
     normalized = dict(overrides)
-    if isinstance(normalized.get("llm_timeout_ms"), int) and normalized["llm_timeout_ms"] < 180_000:
-        normalized["llm_timeout_ms"] = 300_000
     for field in ("llm_base_url", "embedding_base_url", "mineru_base_url"):
         value = normalized.get(field)
         if isinstance(value, str):

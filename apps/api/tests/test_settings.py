@@ -204,7 +204,7 @@ async def test_model_config_crud_masking_and_test(monkeypatch: pytest.MonkeyPatc
                 assert body["document_extract_concurrency"] == 30
                 assert body["document_chunk_max_tokens"] == 1_000
                 assert body["document_chunk_mode"] == "standard"
-                assert body["llm_timeout_ms"] == 60_000
+                assert body["llm_timeout_ms"] == 300_000
                 assert body["llm_max_retries"] == 2
                 assert "search_top_k" in body and "sag_language" in body
                 assert body["sources"]["llm_model"] in {"default", "database", "environment_policy"}

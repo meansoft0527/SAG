@@ -107,7 +107,7 @@ async def test_302_quick_model_setup(monkeypatch: pytest.MonkeyPatch):
                     "llm_temperature": 0.3,
                     "llm_max_tokens": 20_000,
                     "llm_context_window": 128_000,
-                    "llm_timeout_ms": 60_000,
+                    "llm_timeout_ms": 300_000,
                     "llm_max_retries": 2,
                     "document_chunk_max_tokens": 1_000,
                     "document_chunk_mode": "standard",
