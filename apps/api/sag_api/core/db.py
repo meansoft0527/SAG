@@ -28,11 +28,16 @@ def _ensure_sqlite_dir(url: str) -> None:
 
 _ensure_sqlite_dir(settings.database_url)
 
+_connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    _connect_args["timeout"] = 30.0
+
 engine: AsyncEngine = create_async_engine(
     settings.database_url,
     echo=False,
     future=True,
     pool_pre_ping=True,
+    connect_args=_connect_args,
 )
 
 # SQLite：外键约束 + 并发友好（WAL 读写并行，busy_timeout 让写入等待而非立即报锁）
@@ -43,7 +48,7 @@ if settings.database_url.startswith("sqlite"):
         cur = dbapi_conn.cursor()
         cur.execute("PRAGMA foreign_keys=ON")
         cur.execute("PRAGMA journal_mode=WAL")
-        cur.execute("PRAGMA busy_timeout=5000")
+        cur.execute("PRAGMA busy_timeout=30000")
         cur.close()
 
 
