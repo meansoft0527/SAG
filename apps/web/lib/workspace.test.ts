@@ -13,6 +13,8 @@ describe("workspace sections", () => {
       "search",
       "answer",
       "knowledge",
+      "skills",
+      "wiki",
     ]);
   });
 
@@ -23,6 +25,8 @@ describe("workspace sections", () => {
     ["/chat/thread-1", "answer"],
     ["/knowledge", "knowledge"],
     ["/knowledge/source-1", "knowledge"],
+    ["/skills", "skills"],
+    ["/wiki", "wiki"],
     ["/settings", null],
   ])("maps %s to %s", (pathname, expected) => {
     expect(workspaceSectionFromPathname(pathname)).toBe(expected);
@@ -30,6 +34,8 @@ describe("workspace sections", () => {
 
   it("validates persisted values and resolves section metadata", () => {
     expect(isWorkspaceSection("knowledge")).toBe(true);
+    expect(isWorkspaceSection("skills")).toBe(true);
+    expect(isWorkspaceSection("wiki")).toBe(true);
     expect(isWorkspaceSection("explore")).toBe(false);
     expect(workspaceSectionDefinition("answer")).toMatchObject({
       id: "answer",
