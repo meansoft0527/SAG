@@ -87,7 +87,9 @@ jobs:
         run: npm ci
       - name: Install frozen backend dependencies
         working-directory: apps/api
-        run: uv sync --frozen --extra desktop
+        run: |
+          uv sync --frozen --extra desktop
+          uv pip install "numpy>=1.26.4,<2.0.0"
       - name: Prepare macOS release payload
         working-directory: apps/desktop
         run: npm run prepare:release
@@ -139,7 +141,9 @@ jobs:
         run: npm ci
       - name: Install frozen backend dependencies
         working-directory: apps/api
-        run: uv sync --frozen --extra desktop
+        run: |
+          uv sync --frozen --extra desktop
+          uv pip install "numpy>=1.26.4,<2.0.0"
       - name: Prepare Windows release payload
         working-directory: apps/desktop
         run: npm run prepare:release
@@ -226,19 +230,14 @@ jobs:
             '## Changes' > release-notes.md
           node scripts/release-public.mjs --notes "$GITHUB_REF_NAME" >> release-notes.md
           printf '\nChecksums are provided in `SHA256SUMS.txt`.\n' >> release-notes.md
-      - name: Create or update GitHub Release
+      - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" release-assets/* --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "SAG $GITHUB_REF_NAME" --notes-file release-notes.md
-          else
-            gh release create "$GITHUB_REF_NAME" release-assets/* \
-              --repo "$GITHUB_REPOSITORY" \
-              --verify-tag \
-              --latest \
-              --title "SAG $GITHUB_REF_NAME" \
-              --notes-file release-notes.md
-          fi
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --latest \
+            --title "SAG $GITHUB_REF_NAME" \
+            --notes-file release-notes.md
