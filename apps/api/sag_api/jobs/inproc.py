@@ -920,43 +920,30 @@ class InProcessAsyncQueue(JobQueue):
     async def _run_job(self, job_id: str) -> None:
         from sag_api.db.models import Job
 
-        claimed = False
-        claimed_started_at = None
-        for attempt in range(_RECOVERY_LOCK_RETRIES):
-            try:
-                async with self._session_factory() as session:
-                    job = await session.get(Job, job_id)
-                    if job is None or job.status != JobStatus.QUEUED:
-                        return
-                    payload = dict(job.payload or {})
-                    is_resume = bool(payload.pop("resume_requested", False))
-                    claim = await session.execute(
-                        update(Job)
-                        .where(Job.id == job_id, Job.status == JobStatus.QUEUED)
-                        .values(
-                            payload=payload,
-                            status=JobStatus.RUNNING,
-                            started_at=_now(),
-                            finished_at=None,
-                            attempts=job.attempts if is_resume else job.attempts + 1,
-                            progress=job.progress if is_resume else max(job.progress, 0.05),
-                            error=None,
-                        )
-                    )
-                    await session.commit()
-                    if claim.rowcount != 1:
-                        return
-                    await session.refresh(job)
-                    claimed_started_at = job.started_at
-                    claimed = True
-                    break
-            except OperationalError as error:
-                locked = "database is locked" in str(error).lower()
-                if not locked or attempt == _RECOVERY_LOCK_RETRIES - 1:
-                    raise
-                await asyncio.sleep(0.08 * (2**attempt))
-        if not claimed:
-            return
+        async with self._session_factory() as session:
+            job = await session.get(Job, job_id)
+            if job is None or job.status != JobStatus.QUEUED:
+                return
+            payload = dict(job.payload or {})
+            is_resume = bool(payload.pop("resume_requested", False))
+            claim = await session.execute(
+                update(Job)
+                .where(Job.id == job_id, Job.status == JobStatus.QUEUED)
+                .values(
+                    payload=payload,
+                    status=JobStatus.RUNNING,
+                    started_at=_now(),
+                    finished_at=None,
+                    attempts=job.attempts if is_resume else job.attempts + 1,
+                    progress=job.progress if is_resume else max(job.progress, 0.05),
+                    error=None,
+                )
+            )
+            await session.commit()
+            if claim.rowcount != 1:
+                return
+            await session.refresh(job)
+            claimed_started_at = job.started_at
 
             handler = TASK_HANDLERS.get(job.type)
             if handler is None:
