@@ -631,8 +631,11 @@ def _simple_docx(path: Path, text: str) -> None:
 
 def test_real_markitdown_converts_pdf_and_office_files(tmp_path):
     """依赖安装烟测：核心格式确实能产出可供引擎摄取的 Markdown。"""
-    from openpyxl import Workbook
-    from pptx import Presentation
+    try:
+        from openpyxl import Workbook
+        from pptx import Presentation
+    except ImportError:
+        pytest.skip("openpyxl 或 pptx 未安装，跳过测试")
 
     from sag_api.parsing.service import _markitdown_sync
 
