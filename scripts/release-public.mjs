@@ -331,7 +331,11 @@ function assertLocalAnnotatedTag(tag, expectedCommit) {
     `refs/tags/${tag}`,
   ]).split("\0");
   const taggerEmail = rawTaggerEmail.replace(/^<|>$/g, "");
-  if (taggerName !== releaseTagger.name || taggerEmail !== releaseTagger.email) {
+  if (process.env.SAG_RELEASE_TEST_MODE !== "1" && process.env.GITHUB_REPOSITORY && process.env.GITHUB_REPOSITORY !== "Zleap-AI/SAG") {
+    if (!taggerName) {
+      fail(`local ${tag} must have a valid tagger`);
+    }
+  } else if (taggerName !== releaseTagger.name || taggerEmail !== releaseTagger.email) {
     fail(
       `local ${tag} tagger must be ${releaseTagger.name} <${releaseTagger.email}>`,
     );
