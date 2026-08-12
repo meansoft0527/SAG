@@ -38,8 +38,10 @@ def _port() -> int:
 
 def main() -> None:
     _force_utf8_stdio()
+    from sag_api.main import app
+
     uvicorn.run(
-        "sag_api.main:app",
+        app,
         host=os.getenv("SAG_DESKTOP_HOST", "127.0.0.1"),
         port=_port(),
         log_level="info",

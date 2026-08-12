@@ -167,6 +167,7 @@ function startPythonRuntime(
   resourcesPath: string,
   userDataDir: string,
   webOrigin: string,
+  apiPort: number = desktopConfig.apiPort,
 ): StartedProcess {
   const executable = backendExecutable(resourcesPath);
   if (!existsSync(executable)) {
@@ -186,7 +187,7 @@ function startPythonRuntime(
       SAG_SECRET_KEY: secretKey,
       SAG_CORS_ORIGINS: webOrigin,
       SAG_DESKTOP_HOST: desktopConfig.apiHost,
-      SAG_DESKTOP_PORT: String(desktopConfig.apiPort),
+      SAG_DESKTOP_PORT: String(apiPort),
     },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
@@ -204,18 +205,13 @@ function startPythonRuntime(
 
 export async function startPackagedRuntime(): Promise<ManagedRuntime> {
   const host = desktopConfig.apiHost;
-  if (!(await isPortAvailable(host, desktopConfig.apiPort))) {
-    throw new Error(
-      `Local API port ${desktopConfig.apiPort} is already in use. `
-      + "Close the conflicting service or configure SAG_DESKTOP_API_PORT.",
-    );
-  }
+  const apiPort = await findAvailablePort(host, desktopConfig.apiPort);
   const webPort = await findAvailablePort(host, desktopConfig.preferredWebPort);
   const webHealthUrl = `http://${host}:${webPort}`;
   // Next.js standalone normalizes redirects to localhost. Use that as the UI
   // origin while keeping the actual listener restricted to 127.0.0.1.
   const webUrl = `http://localhost:${webPort}`;
-  const apiUrl = `http://${host}:${desktopConfig.apiPort}`;
+  const apiUrl = `http://${host}:${apiPort}`;
   // outputFileTracingRoot is the monorepo root, so Next.js standalone places
   // server.js at web/apps/web/server.js inside the resources directory.
   const webRoot = path.join(process.resourcesPath, "web", "apps", "web");
@@ -224,7 +220,7 @@ export async function startPackagedRuntime(): Promise<ManagedRuntime> {
   const processes: StartedProcess[] = [];
   try {
     processes.push(startNextRuntime(webRoot, webPort));
-    processes.push(startPythonRuntime(process.resourcesPath, userDataDir, webUrl));
+    processes.push(startPythonRuntime(process.resourcesPath, userDataDir, webUrl, apiPort));
     await Promise.all([
       waitForHttp(webHealthUrl, desktopConfig.startupTimeoutMs),
       waitForHttp(
