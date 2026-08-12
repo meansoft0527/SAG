@@ -80,7 +80,7 @@ QUICK_SETUP_302 = {
     "llm_temperature": _OPENAI_COMPATIBLE.default_temperature,
     "llm_max_tokens": 20_000,
     "llm_context_window": _OPENAI_COMPATIBLE.default_context_window,
-    "llm_timeout_ms": 60_000,
+    "llm_timeout_ms": 300_000,
     "llm_max_retries": 2,
     "embedding_model": "Qwen/Qwen3-Embedding-4B",
     "embedding_base_url": "https://api.302ai.cn/v1",
@@ -109,6 +109,8 @@ async def _load_row(session: AsyncSession, key: str = _KEY) -> Setting | None:
 def _normalize_overrides(overrides: dict) -> dict:
     """清理持久化配置，确保已下线或非法策略不会进入运行时。"""
     normalized = dict(overrides)
+    if isinstance(normalized.get("llm_timeout_ms"), int) and normalized["llm_timeout_ms"] < 180_000:
+        normalized["llm_timeout_ms"] = 300_000
     for field in ("llm_base_url", "embedding_base_url", "mineru_base_url"):
         value = normalized.get(field)
         if isinstance(value, str):

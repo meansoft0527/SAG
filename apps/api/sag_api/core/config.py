@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     llm_temperature: float = _DEFAULT_LLM_PROVIDER.default_temperature
     llm_max_tokens: int = 20_000
     llm_context_window: int = _DEFAULT_LLM_PROVIDER.default_context_window
-    llm_timeout_ms: int = Field(default=60_000, ge=1_000, le=600_000)
+    llm_timeout_ms: int = Field(default=300_000, ge=1_000, le=600_000)
     llm_max_retries: int = Field(default=2, ge=0, le=10)
     # 部署方可显式锁定 LLM 接入配置；普通 SAG_LLM_* 仅作为首次启动默认值。
     lock_llm_config: bool = False
