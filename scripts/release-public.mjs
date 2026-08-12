@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicRemote = "origin";
-const publicRepository = process.env.SAG_UPDATE_GITHUB_REPOSITORY || process.env.GITHUB_REPOSITORY || "Zleap-AI/SAG";
+const publicRepository = process.env.SAG_RELEASE_TEST_MODE === "1"
+  ? (process.env.SAG_PUBLIC_REPOSITORY || "Zleap-AI/SAG")
+  : (process.env.SAG_UPDATE_GITHUB_REPOSITORY || process.env.GITHUB_REPOSITORY || "Zleap-AI/SAG");
 const releaseBranch = "main";
 const releaseTagger = Object.freeze({
   name: "Zleap-AI Release",
