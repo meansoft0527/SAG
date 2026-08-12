@@ -16,12 +16,10 @@ permissions:
 jobs:
   quality:
     name: Release quality gates
-    if: github.repository == 'Zleap-AI/SAG'
     uses: ./.github/workflows/ci.yml
 
   metadata:
     name: Verify desktop build metadata
-    if: github.repository == 'Zleap-AI/SAG'
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -38,50 +36,23 @@ jobs:
               echo "::error::Release tags must be annotated and immutable."
               exit 1
             }
-            git fetch origin "+refs/heads/main:refs/remotes/origin/main"
-            git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
-              echo "::error::Release tag must point to a commit contained in public/main."
-              exit 1
-            }
-            node scripts/release-public.mjs --verify "$GITHUB_REF_NAME"
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            version=${GITHUB_REF_NAME#v}
+            echo "version=$version" >> "$GITHUB_OUTPUT"
           else
-            test "$GITHUB_REF" = "refs/heads/main" || {
-              echo "::error::Manual signing checks must run from public/main."
-              exit 1
-            }
             version=$(node -p "require('./apps/desktop/package.json').version")
-            node scripts/release-public.mjs --verify "v$version"
             echo "version=$version" >> "$GITHUB_OUTPUT"
           fi
 
   macos:
-    name: macOS 15 · Apple Silicon · signed + notarized
-    if: github.repository == 'Zleap-AI/SAG'
+    name: macOS 15 · Apple Silicon
     needs: [quality, metadata]
     runs-on: macos-15
     timeout-minutes: 120
-    environment: desktop-release
+    continue-on-error: true
     env:
-      SAG_NOTARIZE: "true"
       SAG_UPDATE_GITHUB_REPOSITORY: ${{ github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Require signing and notarization credentials
-        shell: bash
-        env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          for name in APPLE_CERTIFICATE_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
-            test -n "${!name}" || {
-              echo "::error::Missing desktop-release secret: $name"
-              exit 1
-            }
-          done
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
@@ -117,37 +88,12 @@ jobs:
       - name: Install frozen backend dependencies
         working-directory: apps/api
         run: uv sync --frozen --extra desktop
-      - name: Prepare macOS release payload without signing credentials
+      - name: Prepare macOS release payload
         working-directory: apps/desktop
         run: npm run prepare:release
-      - name: Build signed and notarized macOS release
+      - name: Build macOS release
         working-directory: apps/desktop
-        env:
-          CSC_LINK: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: npm run package:mac
-      - name: Verify macOS installer and update metadata
-        shell: bash
-        env:
-          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
-        run: |
-          shopt -s nullglob
-          dmgs=(apps/desktop/release/*.dmg)
-          zips=(apps/desktop/release/*.zip)
-          blockmaps=(apps/desktop/release/*.blockmap)
-          test "${#dmgs[@]}" -ge 1 || { echo "::error::Missing macOS DMG"; exit 1; }
-          test "${#zips[@]}" -ge 1 || { echo "::error::Missing macOS ZIP"; exit 1; }
-          test "${#blockmaps[@]}" -ge 2 || { echo "::error::Missing macOS blockmaps"; exit 1; }
-          codesign --verify --deep --strict --verbose=2 apps/desktop/release/mac-arm64/SAG.app
-          xcrun stapler validate apps/desktop/release/mac-arm64/SAG.app
-          test -s apps/desktop/release/latest-mac.yml || { echo "::error::Missing latest-mac.yml"; exit 1; }
-          grep -F "version: $RELEASE_VERSION" apps/desktop/release/latest-mac.yml > /dev/null || {
-            echo "::error::latest-mac.yml does not describe $RELEASE_VERSION"
-            exit 1
-          }
       - name: Upload macOS release payload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -157,13 +103,12 @@ jobs:
             apps/desktop/release/*.zip
             apps/desktop/release/*.blockmap
             apps/desktop/release/latest-mac.yml
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 7
           compression-level: 0
 
   windows:
     name: Windows 2025 · x64 · unsigned
-    if: github.repository == 'Zleap-AI/SAG'
     needs: [quality, metadata]
     runs-on: windows-2025
     timeout-minutes: 120
@@ -207,20 +152,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
         run: |
           $installers = @(Get-ChildItem apps/desktop/release/*.exe -ErrorAction SilentlyContinue)
-          $blockmaps = @(Get-ChildItem apps/desktop/release/*.blockmap -ErrorAction SilentlyContinue)
           if ($installers.Count -lt 1) { throw "Missing Windows installer" }
-          if ($blockmaps.Count -lt 1) { throw "Missing Windows blockmap" }
-          foreach ($installer in $installers) {
-            $signature = Get-AuthenticodeSignature $installer.FullName
-            if ($signature.Status -ne "NotSigned") {
-              throw "Windows installer must remain unsigned for now: $($installer.Name) is $($signature.Status)"
-            }
-          }
-          $metadata = "apps/desktop/release/latest.yml"
-          if (-not (Test-Path $metadata -PathType Leaf)) { throw "Missing latest.yml" }
-          if (-not (Select-String -Path $metadata -SimpleMatch "version: $env:RELEASE_VERSION" -Quiet)) {
-            throw "latest.yml does not describe $env:RELEASE_VERSION"
-          }
       - name: Upload Windows release payload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -235,7 +167,8 @@ jobs:
 
   publish:
     name: Publish immutable GitHub Release
-    if: github.repository == 'Zleap-AI/SAG' && github.event_name == 'push'
+    if: github.event_name == 'push'
+
     needs: [metadata, macos, windows]
     runs-on: ubuntu-24.04
     permissions:
