@@ -433,9 +433,15 @@ async def test_universe_overview_expand_detail_and_reset_contract():
                 rebuild_job = rebuilt.json()
                 assert rebuild_job["type"] == "index_universe"
                 assert (await wait_for_job(rebuild_job["id"]))["status"] == "succeeded"
-                manifest_response = await client.get("/api/v1/universe/manifest", headers=headers)
-                assert manifest_response.status_code == 200, manifest_response.text
-                manifest = manifest_response.json()
+                manifest = None
+                for _ in range(30):
+                    manifest_response = await client.get("/api/v1/universe/manifest", headers=headers)
+                    if manifest_response.status_code == 200 and manifest_response.json()["status"] == "ready":
+                        manifest = manifest_response.json()
+                        break
+                    await asyncio.sleep(0.1)
+                if manifest is None:
+                    manifest = (await client.get("/api/v1/universe/manifest", headers=headers)).json()
                 assert manifest["status"] == "ready"
                 counts = manifest["counts"]
                 assert counts["sources"] >= 1

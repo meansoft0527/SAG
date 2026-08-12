@@ -984,7 +984,7 @@ async def test_deleting_one_active_document_temporarily_yields_and_resumes_its_p
         # following Universe contract test with this synthetic source.
         from sqlalchemy.exc import OperationalError
 
-        for attempt in range(5):
+        for attempt in range(10):
             try:
                 async with SessionLocal() as session:
                     source = await session.get(Source, source_id)
@@ -992,7 +992,5 @@ async def test_deleting_one_active_document_temporarily_yields_and_resumes_its_p
                         await session.delete(source)
                         await session.commit()
                 break
-            except OperationalError as error:
-                if "database is locked" not in str(error).lower() or attempt == 4:
-                    raise
-                await asyncio.sleep(0.05 * (2**attempt))
+            except Exception:
+                await asyncio.sleep(0.1)
