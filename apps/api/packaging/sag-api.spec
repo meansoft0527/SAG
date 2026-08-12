@@ -11,6 +11,16 @@ project_root = Path(SPECPATH).parent
 
 datas = []
 binaries = []
+
+# ── 内置技能 YAML 与 Prompt 文件 ─────────────────────────────────────────
+# registry.py 在冻结环境下通过 sys._MEIPASS / sag_api / skills / builtin 定位技能。
+# PyInstaller 不会自动收录非 .py 文件，需手动声明。
+_skills_builtin = project_root / "sag_api" / "skills" / "builtin"
+for _ext in ("*.yaml", "*.md", "*.txt"):
+    for _f in _skills_builtin.rglob(_ext):
+        _rel = str(_f.relative_to(project_root).parent)
+        datas.append((str(_f), _rel))
+
 hiddenimports = [
     "aiosqlite",
     "sqlalchemy.dialects.sqlite",

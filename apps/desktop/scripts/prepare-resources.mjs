@@ -19,7 +19,10 @@ const webRoot = path.join(repoRoot, "apps", "web");
 const resourcesRoot = path.join(desktopRoot, "build", "resources");
 const webTarget = path.join(resourcesRoot, "web");
 const backendTarget = path.join(resourcesRoot, "backend");
-const standaloneSource = path.join(webRoot, ".next", "standalone");
+// outputFileTracingRoot is set to the monorepo root, so standalone output
+// is nested at standalone/apps/web/ instead of standalone/
+const standaloneRoot = path.join(webRoot, ".next", "standalone");
+const standaloneSource = path.join(standaloneRoot, "apps", "web");
 const staticSource = path.join(webRoot, ".next", "static");
 const publicSource = path.join(webRoot, "public");
 const backendSource =
@@ -81,7 +84,7 @@ async function verifyContainedRelativeSymlinks(root) {
 
 if (!(await exists(path.join(standaloneSource, "server.js")))) {
   throw new Error(
-    "Next.js standalone output is missing. Run npm run build:web first.",
+    `Next.js standalone output is missing at ${standaloneSource}. Run npm run build:web first.`,
   );
 }
 
@@ -94,9 +97,12 @@ if (!(await exists(path.join(backendSource, process.platform === "win32" ? "sag-
 
 await rm(resourcesRoot, { recursive: true, force: true });
 await mkdir(resourcesRoot, { recursive: true });
-await cp(standaloneSource, webTarget, { recursive: true });
-const standaloneModules = path.join(webTarget, "node_modules");
-const packagedModules = path.join(webTarget, "runtime_modules");
+// Copy the full standalone root so node_modules shared across packages are included
+await cp(standaloneRoot, webTarget, { recursive: true });
+// After copying the whole root, the actual server.js lives at apps/web/
+const webInTarget = path.join(webTarget, "apps", "web");
+const standaloneModules = path.join(webInTarget, "node_modules");
+const packagedModules = path.join(webInTarget, "runtime_modules");
 if (!(await exists(standaloneModules))) {
   throw new Error("Next.js standalone output does not contain node_modules.");
 }
@@ -104,10 +110,11 @@ if (!(await exists(standaloneModules))) {
 // extraResources. Rename the standalone dependency directory and expose it
 // through NODE_PATH when Electron starts the local web runtime.
 await rename(standaloneModules, packagedModules);
-await mkdir(path.join(webTarget, ".next"), { recursive: true });
-await cp(staticSource, path.join(webTarget, ".next", "static"), { recursive: true });
+// Place static assets alongside the nested server.js
+await mkdir(path.join(webInTarget, ".next"), { recursive: true });
+await cp(staticSource, path.join(webInTarget, ".next", "static"), { recursive: true });
 if (await exists(publicSource)) {
-  await cp(publicSource, path.join(webTarget, "public"), { recursive: true });
+  await cp(publicSource, path.join(webInTarget, "public"), { recursive: true });
 }
 await mkdir(backendTarget, { recursive: true });
 const packagedBackend = path.join(backendTarget, "sag-api");

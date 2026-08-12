@@ -186,7 +186,9 @@ export async function startPackagedRuntime(): Promise<ManagedRuntime> {
   // origin while keeping the actual listener restricted to 127.0.0.1.
   const webUrl = `http://localhost:${webPort}`;
   const apiUrl = `http://${host}:${desktopConfig.apiPort}`;
-  const webRoot = path.join(process.resourcesPath, "web");
+  // outputFileTracingRoot is the monorepo root, so Next.js standalone places
+  // server.js at web/apps/web/server.js inside the resources directory.
+  const webRoot = path.join(process.resourcesPath, "web", "apps", "web");
   const userDataDir = app.getPath("userData");
 
   const processes: StartedProcess[] = [];

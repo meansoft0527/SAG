@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 try:
@@ -60,7 +61,15 @@ class SkillRegistry:
     """Skill 集中注册管理。"""
 
     def __init__(self, builtin_dir: Optional[Path] = None, custom_dir: Optional[Path] = None):
-        root = Path(__file__).parent
+        # PyInstaller 冻结时 __file__ 指向内存中的 .pyc，需改用 sys._MEIPASS 定位磁盘资源
+        # PyInstaller 6.x 将 datas 放在 {_MEIPASS}/_internal/，旧版直接在 _MEIPASS 下
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            meipass = Path(sys._MEIPASS)
+            # 优先尝试 PyInstaller 6.x 的 _internal 子目录布局
+            candidate = meipass / "_internal" / "sag_api" / "skills"
+            root = candidate if candidate.exists() else meipass / "sag_api" / "skills"
+        else:
+            root = Path(__file__).parent
         self.builtin_dir = builtin_dir or (root / "builtin")
         self.custom_dir = custom_dir or (root / "custom")
         self.skills: Dict[str, BaseSkill] = {}
