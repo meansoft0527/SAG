@@ -38,17 +38,20 @@ async def _isolate_persisted_jobs():
     if not exists:
         return
 
-    async with SessionLocal() as session:
-        await session.execute(delete(Job))
-        await session.execute(
-            delete(Document).where(
-                Document.status.in_(
-                    [
-                        DocumentStatus.PAUSING,
-                        DocumentStatus.DELETING,
-                        DocumentStatus.DELETE_FAILED,
-                    ]
+    try:
+        async with SessionLocal() as session:
+            await session.execute(delete(Job))
+            await session.execute(
+                delete(Document).where(
+                    Document.status.in_(
+                        [
+                            DocumentStatus.PAUSING,
+                            DocumentStatus.DELETING,
+                            DocumentStatus.DELETE_FAILED,
+                        ]
+                    )
                 )
             )
-        )
-        await session.commit()
+            await session.commit()
+    except Exception:
+        pass
