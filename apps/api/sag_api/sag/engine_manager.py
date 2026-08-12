@@ -480,42 +480,50 @@ class EngineManager:
         creates it; our incremental processor uses the lower-level loader directly,
         so the adapter must preserve that invariant itself.
         """
-        from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+        from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
         from zleap.sag.db import SourceConfig, get_session_factory
 
         name = str(getattr(source, "name", "") or f"sag-{source_config_id[-8:]}")[:100]
         description = str(getattr(source, "description", "") or "created by sag EngineManager")[:255]
-        try:
-            session_factory = get_session_factory()
-            async with session_factory() as session:
-                if await session.get(SourceConfig, source_config_id) is not None:
-                    return
-                session.add(
-                    SourceConfig(
-                        id=source_config_id,
-                        name=name,
-                        description=description,
-                        target_config={},
+        for attempt in range(3):
+            try:
+                session_factory = get_session_factory()
+                async with session_factory() as session:
+                    if await session.get(SourceConfig, source_config_id) is not None:
+                        return
+                    session.add(
+                        SourceConfig(
+                            id=source_config_id,
+                            name=name,
+                            description=description,
+                            target_config={},
+                        )
                     )
-                )
-                try:
-                    await session.commit()
-                except IntegrityError:
-                    # Another process may have provisioned the same source between
-                    # our read and insert. Treat that race as success only when the
-                    # parent row is now present.
-                    await session.rollback()
-                    if await session.get(SourceConfig, source_config_id) is None:
-                        raise
-        except SQLAlchemyError as error:
-            from sag_api.core.errors import UpstreamError
+                    try:
+                        await session.commit()
+                        return
+                    except (IntegrityError, OperationalError):
+                        # Another process or concurrent test may have provisioned or locked
+                        # the same source between our read and insert. Treat that race as success
+                        # when the parent row is now present.
+                        await session.rollback()
+                        if await session.get(SourceConfig, source_config_id) is not None:
+                            return
+                        if attempt == 2:
+                            raise
+            except OperationalError:
+                if attempt == 2:
+                    raise
+                await asyncio.sleep(0.1)
+            except SQLAlchemyError as error:
+                from sag_api.core.errors import UpstreamError
 
-            log.exception("信源父记录初始化失败 source_config_id=%s", source_config_id)
-            raise UpstreamError(
-                "信源引擎初始化失败，请稍后重试",
-                layer=ErrorLayer.STORE,
-                stage=ErrorStage.PERSIST,
-            ) from error
+                log.exception("信源父记录初始化失败 source_config_id=%s", source_config_id)
+                raise UpstreamError(
+                    "信源引擎初始化失败，请稍后重试",
+                    layer=ErrorLayer.STORE,
+                    stage=ErrorStage.PERSIST,
+                ) from error
 
     async def _slot(self, source_config_id: str, source: Source | None = None) -> _Slot:
         slot = self._slots.get(source_config_id)
