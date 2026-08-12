@@ -884,9 +884,18 @@ class EngineManager:
                     },
                 )
             log.info("精确检索空结果，回退快速检索 source_config_id=%s", source_config_id)
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             if strategy == "vector" or not self._settings.search_fallback_vector:
-                raise
+                return SearchOutcome(
+                    query=query,
+                    sections=[],
+                    stats={
+                        "requested_strategy": strategy,
+                        "effective_strategy": strategy,
+                        "fallback_used": False,
+                        "error": "timeout",
+                    },
+                )
             log.warning(
                 "检索超时(%.0fs) 回退 vector source_config_id=%s strategy=%s",
                 self._settings.search_source_timeout,
@@ -895,24 +904,47 @@ class EngineManager:
             )
         except Exception as e:  # noqa: BLE001
             if strategy == "vector" or not self._settings.search_fallback_vector:
-                raise
+                return SearchOutcome(
+                    query=query,
+                    sections=[],
+                    stats={
+                        "requested_strategy": strategy,
+                        "effective_strategy": strategy,
+                        "fallback_used": False,
+                        "error": str(e),
+                    },
+                )
             log.warning(
                 "检索失败回退 vector source_config_id=%s strategy=%s err=%s",
                 source_config_id,
                 strategy,
                 getattr(e, "message", None) or e,
             )
-        outcome = await self._search_raw(source_config_id, query, source=source, strategy="vector", top_k=top_k)
-        return SearchOutcome(
-            query=outcome.query,
-            sections=outcome.sections,
-            stats={
-                **outcome.stats,
-                "requested_strategy": strategy,
-                "effective_strategy": "vector",
-                "fallback_used": True,
-            },
-        )
+
+        try:
+            outcome = await self._search_raw(source_config_id, query, source=source, strategy="vector", top_k=top_k)
+            return SearchOutcome(
+                query=outcome.query,
+                sections=outcome.sections,
+                stats={
+                    **outcome.stats,
+                    "requested_strategy": strategy,
+                    "effective_strategy": "vector",
+                    "fallback_used": True,
+                },
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("回退 vector 检索也失败 source_config_id=%s err=%s", source_config_id, e)
+            return SearchOutcome(
+                query=query,
+                sections=[],
+                stats={
+                    "requested_strategy": strategy,
+                    "effective_strategy": "vector",
+                    "fallback_used": True,
+                    "error": str(e),
+                },
+            )
 
     async def search_many(
         self,

@@ -2,11 +2,27 @@
 
 from __future__ import annotations
 
+import io
 import os
-
-os.environ.setdefault("NPY_DISABLE_CPU_FEATURES", "AVX2,AVX512F,AVX512_SKX,FMA3")
+import sys
 
 import uvicorn
+
+
+def _force_utf8_stdio() -> None:
+    """Windows 下强制 stdout/stderr 使用 UTF-8，防止 emoji/中文日志触发 UnicodeEncodeError。"""
+    os.environ.setdefault("PYTHONUTF8", "1")
+    if sys.platform == "win32":
+        for stream_name in ("stdout", "stderr"):
+            stream = getattr(sys, stream_name, None)
+            if stream is not None and hasattr(stream, "buffer"):
+                try:
+                    wrapped = io.TextIOWrapper(
+                        stream.buffer, encoding="utf-8", errors="replace", line_buffering=True
+                    )
+                    setattr(sys, stream_name, wrapped)
+                except Exception:
+                    pass
 
 
 def _port() -> int:
@@ -21,6 +37,7 @@ def _port() -> int:
 
 
 def main() -> None:
+    _force_utf8_stdio()
     uvicorn.run(
         "sag_api.main:app",
         host=os.getenv("SAG_DESKTOP_HOST", "127.0.0.1"),
