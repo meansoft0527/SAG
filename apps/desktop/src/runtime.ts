@@ -95,6 +95,28 @@ function pipeUtilityLogs(child: UtilityProcess, name: string): void {
   child.on("exit", (code) => log.info(`${name} exited with code ${code}`));
 }
 
+function killProcessTree(pid: number | undefined): void {
+  if (!pid) return;
+  if (process.platform === "win32") {
+    try {
+      spawn("taskkill", ["/F", "/T", "/PID", String(pid)], {
+        windowsHide: true,
+        stdio: "ignore",
+      });
+    } catch (error) {
+      log.warn("Failed to taskkill process tree pid=" + pid, error);
+    }
+  } else {
+    try {
+      process.kill(-pid, "SIGKILL");
+    } catch {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {}
+    }
+  }
+}
+
 function startNextRuntime(webRoot: string, port: number): StartedProcess {
   const serverEntry = path.join(webRoot, "server.js");
   if (!existsSync(serverEntry)) {
@@ -117,7 +139,10 @@ function startNextRuntime(webRoot: string, port: number): StartedProcess {
   pipeUtilityLogs(child, "web");
   return {
     stop: () => {
-      child.kill();
+      killProcessTree(child.pid);
+      try {
+        child.kill();
+      } catch {}
     },
   };
 }
@@ -169,7 +194,10 @@ function startPythonRuntime(
   pipeChildLogs(child, "api");
   return {
     stop: () => {
-      child.kill();
+      killProcessTree(child.pid);
+      try {
+        child.kill("SIGTERM");
+      } catch {}
     },
   };
 }

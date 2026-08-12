@@ -478,6 +478,11 @@
     "secretDescription": "密钥不会回显，留空保持当前配置不变。",
     "testing": "测试中…",
     "testGeneration": "测试生成模型",
+    "testEmbedding": "测试向量模型",
+    "testParser": "测试解析模型",
+    "testingGeneration": "测试生成中…",
+    "testingEmbedding": "测试向量中…",
+    "testingParser": "测试解析中…",
     "saving": "保存中…",
     "save": "保存并生效"
   },

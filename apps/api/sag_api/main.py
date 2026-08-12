@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-
-os.environ.setdefault("NPY_DISABLE_CPU_FEATURES", "AVX2,AVX512F,AVX512_SKX,FMA3")
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request

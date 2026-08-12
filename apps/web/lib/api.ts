@@ -603,6 +603,22 @@ export const api = {
         body: b ? JSON.stringify(b) : undefined,
       },
     ),
+  testEmbeddingConfig: (b?: ModelConfigPatch) =>
+    request<{ ok: boolean; message: string }>(
+      "/api/v1/system/model-config/test-embedding",
+      {
+        method: "POST",
+        body: b ? JSON.stringify(b) : undefined,
+      },
+    ),
+  testParserConfig: (b?: ModelConfigPatch) =>
+    request<{ ok: boolean; message: string }>(
+      "/api/v1/system/model-config/test-parser",
+      {
+        method: "POST",
+        body: b ? JSON.stringify(b) : undefined,
+      },
+    ),
 
   // 信源
   listSources: () => request<Source[]>("/api/v1/sources"),

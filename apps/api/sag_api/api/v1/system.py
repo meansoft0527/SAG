@@ -236,9 +236,110 @@ async def test_model_config(
         await llm.complete([{"role": "user", "content": "ping"}])
         return {
             "ok": True,
-            "message": f"连接成功 · {active.llm_provider} / {active.llm_model}",
+            "message": f"生成模型连接成功 · {active.llm_provider} / {active.llm_model}",
         }
     except ApiError as e:
         return {"ok": False, "message": e.message}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "message": str(e)}
+
+
+@router.post("/model-config/test-embedding")
+async def test_embedding_config(
+    request: Request,
+    body: ModelConfigUpdate | None = None,
+    _user: User = Depends(get_current_user),
+) -> dict:
+    """连接测试：验证向量 Embedding 模型配置。"""
+    active = settings
+    if body is not None:
+        patch = body.model_dump(exclude_unset=True)
+        updates = {
+            key: (None if key in {"embedding_base_url"} and value == "" else value)
+            for key, value in patch.items()
+            if not (key == "embedding_api_key" and not value)
+        }
+        active = settings.model_copy(update=updates)
+
+    model = active.embedding_model or "default"
+    base_url = active.effective_embedding_base_url
+    api_key = active.effective_embedding_api_key or "not-configured"
+
+    if not api_key or api_key in ("not-configured", "local", "None"):
+        return {
+            "ok": True,
+            "message": f"使用本地/离线特征哈希向量模型 · {model}",
+        }
+
+    try:
+        from openai import AsyncOpenAI
+
+        client_kwargs: dict[str, object] = {"api_key": api_key, "timeout": 10.0}
+        if base_url:
+            clean_url = str(base_url).rstrip("/")
+            if clean_url.endswith("/embeddings"):
+                clean_url = clean_url[:-11]
+            client_kwargs["base_url"] = clean_url
+        client = AsyncOpenAI(**client_kwargs)
+        res = await client.embeddings.create(input="ping", model=model)
+        dim = len(res.data[0].embedding) if res.data else 0
+        return {
+            "ok": True,
+            "message": f"向量模型连接成功 · {model} (维度: {dim})",
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "message": f"向量模型连接失败：{e}"}
+
+
+@router.post("/model-config/test-parser")
+async def test_parser_config(
+    request: Request,
+    body: ModelConfigUpdate | None = None,
+    _user: User = Depends(get_current_user),
+) -> dict:
+    """连接测试：验证文档解析引擎（MarkItDown / MinerU）配置。"""
+    active = settings
+    if body is not None:
+        patch = body.model_dump(exclude_unset=True)
+        updates = {
+            key: (None if key in {"mineru_base_url"} and value == "" else value)
+            for key, value in patch.items()
+            if not (key == "mineru_api_key" and not value)
+        }
+        active = settings.model_copy(update=updates)
+
+    parser_mode = active.document_parser
+    if parser_mode == "markitdown":
+        return {"ok": True, "message": "MarkItDown 本地解析引擎就绪"}
+
+    mineru_url = active.mineru_base_url
+    mineru_key = active.mineru_api_key
+
+    if not mineru_url or not mineru_key:
+        if parser_mode == "auto":
+            return {
+                "ok": True,
+                "message": "自动解析模式：未配置 MinerU，将自动使用本地 MarkItDown",
+            }
+        return {"ok": False, "message": "MinerU 尚未配置 Base URL 与 API Key"}
+
+    try:
+        import httpx
+
+        url = f"{str(mineru_url).rstrip('/')}/302/upload-file"
+        headers = {"Authorization": f"Bearer {mineru_key}"}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.request("OPTIONS", url, headers=headers)
+            if response.status_code in {200, 204, 405}:
+                return {
+                    "ok": True,
+                    "message": f"MinerU {active.mineru_version} 解析引擎连接成功",
+                }
+            if response.status_code in {401, 403}:
+                return {"ok": False, "message": "MinerU 鉴权失败，请检查 API Key"}
+            return {
+                "ok": True,
+                "message": f"MinerU {active.mineru_version} 解析端点已响应（{response.status_code}）",
+            }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "message": f"MinerU 连接失败：{e}"}

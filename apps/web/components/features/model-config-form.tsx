@@ -48,7 +48,7 @@ export function ModelConfigForm() {
   const [providers, setProviders] = React.useState<ModelProviderSpec[]>([]);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const [testing, setTesting] = React.useState(false);
+  const [testingKind, setTestingKind] = React.useState<"generation" | "embedding" | "parser" | null>(null);
   const [testResult, setTestResult] = React.useState<{ ok: boolean; message: string } | null>(null);
 
   const [llmProvider, setLlmProvider] = React.useState<ModelProviderId>("openai");
@@ -187,13 +187,17 @@ export function ModelConfigForm() {
     }
   }
 
-  async function test() {
-    setTesting(true);
+  async function runTest(
+    kind: "generation" | "embedding" | "parser",
+    fn: (patch: ModelConfigPatch) => Promise<{ ok: boolean; message: string }>,
+  ) {
+    setTestingKind(kind);
     setTestResult(null);
     try {
-      const result = await api.testModelConfig(currentPatch());
+      const result = await fn(currentPatch());
       setTestResult(result);
       getDiagnosticsStore().record("model.test", {
+        kind,
         ok: result.ok,
         message: result.message,
       });
@@ -201,13 +205,18 @@ export function ModelConfigForm() {
       const message = error instanceof ApiError ? error.message : t("testFailed");
       setTestResult({ ok: false, message });
       getDiagnosticsStore().record("model.test", {
+        kind,
         ok: false,
         message,
       });
     } finally {
-      setTesting(false);
+      setTestingKind(null);
     }
   }
+
+  const testGeneration = () => runTest("generation", (patch) => api.testModelConfig(patch));
+  const testEmbedding = () => runTest("embedding", (patch) => api.testEmbeddingConfig(patch));
+  const testParser = () => runTest("parser", (patch) => api.testParserConfig(patch));
 
   function changeProvider(value: string) {
     const next = providers.find((provider) => provider.id === value);
@@ -597,7 +606,7 @@ export function ModelConfigForm() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={saving || testing}
+                  disabled={saving || testingKind !== null}
                   onClick={() => void setup302MinerU()}
                   className="w-fit"
                 >
@@ -637,11 +646,34 @@ export function ModelConfigForm() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" onClick={test} variant="outline" disabled={llmLocked || testing || saving}>
-            {testing ? <Spinner /> : <Plug />}
-            {testing ? t("testing") : t("testGeneration")}
+          <Button
+            type="button"
+            onClick={testGeneration}
+            variant="outline"
+            disabled={llmLocked || testingKind !== null || saving}
+          >
+            {testingKind === "generation" ? <Spinner /> : <Plug />}
+            {testingKind === "generation" ? t("testingGeneration") : t("testGeneration")}
           </Button>
-          <Button type="button" onClick={save} disabled={saving || testing}>
+          <Button
+            type="button"
+            onClick={testEmbedding}
+            variant="outline"
+            disabled={testingKind !== null || saving}
+          >
+            {testingKind === "embedding" ? <Spinner /> : <Plug />}
+            {testingKind === "embedding" ? t("testingEmbedding") : t("testEmbedding")}
+          </Button>
+          <Button
+            type="button"
+            onClick={testParser}
+            variant="outline"
+            disabled={testingKind !== null || saving}
+          >
+            {testingKind === "parser" ? <Spinner /> : <Plug />}
+            {testingKind === "parser" ? t("testingParser") : t("testParser")}
+          </Button>
+          <Button type="button" onClick={save} disabled={saving || testingKind !== null}>
             {saving ? <Spinner /> : <Save />}
             {saving ? t("saving") : t("save")}
           </Button>

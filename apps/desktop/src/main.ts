@@ -1,12 +1,16 @@
-import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
+import { closeSync, existsSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import path from "node:path";
 
 import {
   app,
   BrowserWindow,
   ipcMain,
+  Menu,
+  nativeImage,
   shell,
+  Tray,
   type IpcMainInvokeEvent,
+  type NativeImage,
 } from "electron";
 import log from "electron-log/main";
 
@@ -20,6 +24,7 @@ import { createUpdaterController, type UpdaterController } from "./updater";
 
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 let runtime: ManagedRuntime | null = null;
 let updater: UpdaterController | null = null;
 let trustedOrigin = "";
@@ -40,6 +45,76 @@ log.transports.file.maxSize = 5 * 1024 * 1024;
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) app.quit();
+
+function createTray(): Tray {
+  const iconName = process.platform === "win32" ? "icon.ico" : "icon-master.png";
+  const iconPath = path.join(app.getAppPath(), "assets", iconName);
+  let icon: NativeImage;
+  if (existsSync(iconPath)) {
+    icon = nativeImage.createFromPath(iconPath);
+  } else {
+    icon = nativeImage.createEmpty();
+  }
+  const trayInstance = new Tray(icon);
+  trayInstance.setToolTip("SAG 智能知识库");
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "显示主界面",
+      click: () => {
+        if (mainWindow) {
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      },
+    },
+    {
+      label: "检查更新",
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          void updater?.check();
+        }
+      },
+    },
+    { type: "separator" },
+    {
+      label: "退出系统",
+      click: () => {
+        quitting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  trayInstance.setContextMenu(contextMenu);
+  trayInstance.on("click", () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+          mainWindow.focus();
+        } else {
+          mainWindow.focus();
+        }
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+  trayInstance.on("double-click", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  return trayInstance;
+}
 
 function createSplashWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -230,6 +305,12 @@ function createMainWindow(webUrl: string): BrowserWindow {
     splashWindow = null;
     window.show();
   });
+  window.on("close", (event) => {
+    if (!quitting) {
+      event.preventDefault();
+      window.hide();
+    }
+  });
   window.on("closed", () => {
     mainWindow = null;
   });
@@ -246,6 +327,9 @@ async function bootstrap(): Promise<void> {
       ? await startPackagedRuntime()
       : await waitForDevelopmentRuntime(devWebUrl);
     mainWindow = createMainWindow(runtime.webUrl);
+    if (!tray) {
+      tray = createTray();
+    }
     updater = createUpdaterController(() => mainWindow);
     registerIpc();
   } catch (error) {
@@ -265,7 +349,9 @@ if (gotSingleInstanceLock) {
 
   app.on("activate", () => {
     if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.show();
+      mainWindow.focus();
       return;
     }
     if (runtime) {
@@ -277,6 +363,10 @@ if (gotSingleInstanceLock) {
 
   app.on("before-quit", () => {
     quitting = true;
+    if (tray) {
+      tray.destroy();
+      tray = null;
+    }
     updater?.dispose();
     runtime?.stop();
     runtime = null;

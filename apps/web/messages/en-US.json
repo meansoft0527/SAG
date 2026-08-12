@@ -478,6 +478,11 @@
     "secretDescription": "The key is never displayed. Leave blank to keep the current value.",
     "testing": "Testing…",
     "testGeneration": "Test generation model",
+    "testEmbedding": "Test embedding model",
+    "testParser": "Test parser model",
+    "testingGeneration": "Testing generation…",
+    "testingEmbedding": "Testing embedding…",
+    "testingParser": "Testing parser…",
     "saving": "Saving…",
     "save": "Save and apply"
   },
