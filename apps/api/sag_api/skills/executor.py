@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
+
 from sag_api.core.logging import get_logger
 from sag_api.skills.base import BaseSkill, SkillContext
 from sag_api.tools.base import ToolContext
@@ -80,7 +81,7 @@ class SkillExecutor:
                 async for token in ctx.llm.astream_chat(system="请执行以下工作流环节:", prompt=prompt_content):
                     result_tokens.append(token)
                 step_outputs[step_name] = "".join(result_tokens)
-                yield f" 完成。\n\n"
+                yield " 完成。\n\n"
 
         yield f"✅ 工作流 [{skill.name}] 执行完毕。\n"
 

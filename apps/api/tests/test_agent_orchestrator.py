@@ -1,13 +1,11 @@
 """Phase 2 测试：验证 Agent 编排器、TaskPlanner 任务拆解与内置工具。"""
 
-import pytest
 import asyncio
-from pathlib import Path
 
 from sag_api.agent.orchestrator import AgentOrchestrator
 from sag_api.agent.planner import TaskPlanner
-from sag_api.tools.registry import registry as tool_registry
 from sag_api.tools.base import ToolContext
+from sag_api.tools.registry import registry as tool_registry
 
 
 def test_task_planner():

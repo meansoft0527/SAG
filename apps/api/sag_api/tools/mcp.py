@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
 try:
     from mcp.client.streamable_http import streamablehttp_client
 except ImportError:

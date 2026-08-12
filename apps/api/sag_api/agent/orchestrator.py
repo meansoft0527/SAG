@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
+
 from sag_api.agent.planner import global_task_planner
 from sag_api.core.logging import get_logger
 from sag_api.skills.base import SkillContext
 from sag_api.skills.registry import global_skill_registry
 from sag_api.tools.base import ToolContext
 from sag_api.tools.registry import registry as global_tool_registry
-from sag_api.wiki.manager import get_wiki_manager
 
 log = get_logger("agent.orchestrator")
 

@@ -1,12 +1,10 @@
 """Phase 3 测试：验证 LLM Wiki 三层架构、CRUD 与自生长引擎。"""
 
-import pytest
 import asyncio
 from pathlib import Path
 
-from sag_api.wiki.manager import WikiManager
-from sag_api.wiki.schema import WikiSchema
 from sag_api.wiki.auto_grow import AutoGrowEngine
+from sag_api.wiki.manager import WikiManager
 
 
 def test_wiki_schema_and_init(tmp_path: Path):

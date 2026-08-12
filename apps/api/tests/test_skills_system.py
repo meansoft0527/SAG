@@ -1,12 +1,11 @@
 """Phase 2.5 测试：验证完整的 Skill 扩展系统。"""
 
-import pytest
 import asyncio
 from pathlib import Path
 
-from sag_api.skills.registry import global_skill_registry
-from sag_api.skills.executor import SkillExecutor
 from sag_api.skills.base import SkillContext
+from sag_api.skills.executor import SkillExecutor
+from sag_api.skills.registry import global_skill_registry
 
 
 def test_builtin_skills_loaded():

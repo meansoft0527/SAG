@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import shutil
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -27,7 +27,7 @@ class SkillSummary(BaseModel):
 
 class SkillRunRequest(BaseModel):
     input_text: str
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
     conversation_id: str | None = None
 
 
@@ -36,13 +36,13 @@ class SkillCreateRequest(BaseModel):
     version: str = "1.0.0"
     description: str
     skill_type: str = "prompt"
-    keywords: List[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
     system_prompt: str = ""
     user_prompt: str = "{input}"
 
 
-@router.get("", response_model=List[SkillSummary])
-async def list_skills() -> List[SkillSummary]:
+@router.get("", response_model=list[SkillSummary])
+async def list_skills() -> list[SkillSummary]:
     """获取所有已安装并注册的 Skill 列表。"""
     res = []
     for skill in global_skill_registry.skills.values():
@@ -60,7 +60,7 @@ async def list_skills() -> List[SkillSummary]:
 
 
 @router.get("/{name}")
-async def get_skill(name: str) -> Dict[str, Any]:
+async def get_skill(name: str) -> dict[str, Any]:
     """获取指定 Skill 的详细配置。"""
     skill = global_skill_registry.get_skill(name)
     if not skill:
@@ -95,7 +95,7 @@ async def run_skill(name: str, req: SkillRunRequest, request: Request):
 
 
 @router.post("/{name}/toggle")
-async def toggle_skill(name: str, enabled: bool) -> Dict[str, Any]:
+async def toggle_skill(name: str, enabled: bool) -> dict[str, Any]:
     """启用或禁用技能。"""
     skill = global_skill_registry.get_skill(name)
     if not skill:
@@ -106,7 +106,7 @@ async def toggle_skill(name: str, enabled: bool) -> Dict[str, Any]:
 
 
 @router.post("/create")
-async def create_custom_skill(req: SkillCreateRequest) -> Dict[str, Any]:
+async def create_custom_skill(req: SkillCreateRequest) -> dict[str, Any]:
     """快捷创建自定义技能。"""
     custom_dir = global_skill_registry.custom_dir / req.name
     custom_dir.mkdir(parents=True, exist_ok=True)
@@ -135,7 +135,7 @@ prompts:
 
 
 @router.delete("/{name}")
-async def delete_custom_skill(name: str) -> Dict[str, Any]:
+async def delete_custom_skill(name: str) -> dict[str, Any]:
     """删除自定义技能。"""
     skill = global_skill_registry.get_skill(name)
     if not skill:

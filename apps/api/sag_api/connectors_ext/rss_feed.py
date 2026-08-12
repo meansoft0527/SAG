@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-import httpx
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List
+from typing import Any
+
+import httpx
+
 from sag_api.core.logging import get_logger
 
 log = get_logger("connectors.rss")
@@ -13,7 +15,7 @@ log = get_logger("connectors.rss")
 class RSSFeedManager:
     """RSS / Atom 订阅解析与轮询。"""
 
-    async def fetch_feed(self, feed_url: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def fetch_feed(self, feed_url: str, limit: int = 10) -> list[dict[str, Any]]:
         """抓取并解析 RSS/Atom xml 内容。"""
         log.info("开始拉取 RSS: %s", feed_url)
         try:

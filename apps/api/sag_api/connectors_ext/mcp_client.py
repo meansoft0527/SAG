@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
+
 from pydantic import BaseModel, Field
+
 from sag_api.core.logging import get_logger
 
 log = get_logger("connectors.mcp_client")
@@ -14,8 +16,8 @@ class MCPServerConfig(BaseModel):
     name: str
     transport: str = "stdio"  # stdio / sse / streamable-http
     command: str = ""
-    args: List[str] = Field(default_factory=list)
-    env: Dict[str, str] = Field(default_factory=dict)
+    args: list[str] = Field(default_factory=list)
+    env: dict[str, str] = Field(default_factory=dict)
     enabled: bool = True
 
 
@@ -23,13 +25,13 @@ class MCPClientManager:
     """MCP 外部客户端连接管理器。"""
 
     def __init__(self):
-        self.servers: Dict[str, MCPServerConfig] = {}
+        self.servers: dict[str, MCPServerConfig] = {}
 
     def register_server(self, config: MCPServerConfig):
         self.servers[config.id] = config
         log.info("已注册 MCP 外部服务: %s (%s)", config.name, config.transport)
 
-    async def list_available_tools(self, server_id: str) -> List[Dict[str, Any]]:
+    async def list_available_tools(self, server_id: str) -> list[dict[str, Any]]:
         if server_id not in self.servers:
             return []
         server = self.servers[server_id]

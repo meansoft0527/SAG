@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import List
-
 
 class WikiSchema:
     """Wiki 三层数据规范与规则约束。"""
 
-    DEFAULT_RULES: List[str] = [
+    DEFAULT_RULES: list[str] = [
         "raw/ 保持原始输入资料，只读禁止任何修改。",
         "wiki/ 用于保存 Agent 抽取的结构化沉淀，包含 sources/概念 concepts/实体 entities/主题 topics。",
         "处理新资料前优先搜索 wiki/ 已有页面，避免重复创建同一概念。",

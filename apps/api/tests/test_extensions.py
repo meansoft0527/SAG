@@ -1,7 +1,7 @@
 """测试新增的 Skill 注册表与 Wiki 管理器模块。"""
 
-import pytest
 from pathlib import Path
+
 from sag_api.skills.registry import SkillRegistry
 from sag_api.wiki.manager import WikiManager
 

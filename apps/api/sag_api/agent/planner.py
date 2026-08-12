@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +22,7 @@ class TaskPlan(BaseModel):
     """总体任务规划方案。"""
 
     goal: str
-    steps: List[TaskStep] = Field(default_factory=list)
+    steps: list[TaskStep] = Field(default_factory=list)
 
 
 class TaskPlanner:
@@ -35,7 +36,15 @@ class TaskPlanner:
 
         # 示例：如果需求包含复合词汇，建立多步拆解
         if "且" in req_clean or "然后" in req_clean or "并" in req_clean:
-            sub_parts = [p.strip() for p in req_clean.replace("且", ";").replace("然后", ";").replace("并", ";").split(";") if p.strip()]
+            sub_parts = [
+                p.strip()
+                for p in req_clean.replace("并且", ";")
+                .replace("且", ";")
+                .replace("然后", ";")
+                .replace("并", ";")
+                .split(";")
+                if p.strip()
+            ]
             for idx, part in enumerate(sub_parts, start=1):
                 steps.append(
                     TaskStep(

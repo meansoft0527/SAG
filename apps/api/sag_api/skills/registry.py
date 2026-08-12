@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+
 try:
     import yaml
 except ModuleNotFoundError:
@@ -60,7 +59,7 @@ class PromptSkill(BaseSkill):
 class SkillRegistry:
     """Skill 集中注册管理。"""
 
-    def __init__(self, builtin_dir: Optional[Path] = None, custom_dir: Optional[Path] = None):
+    def __init__(self, builtin_dir: Path | None = None, custom_dir: Path | None = None):
         # PyInstaller 冻结时 __file__ 指向内存中的 .pyc，需改用 sys._MEIPASS 定位磁盘资源
         # PyInstaller 6.x 将 datas 放在 {_MEIPASS}/_internal/，旧版直接在 _MEIPASS 下
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
@@ -72,7 +71,7 @@ class SkillRegistry:
             root = Path(__file__).parent
         self.builtin_dir = builtin_dir or (root / "builtin")
         self.custom_dir = custom_dir or (root / "custom")
-        self.skills: Dict[str, BaseSkill] = {}
+        self.skills: dict[str, BaseSkill] = {}
 
     async def load_all(self):
         """扫描并加载所有技能。"""
@@ -96,7 +95,7 @@ class SkillRegistry:
                     except Exception as e:  # noqa: BLE001
                         log.warning("加载 Skill 失败 path=%s: %s", item, e)
 
-    def match(self, user_input: str) -> List[BaseSkill]:
+    def match(self, user_input: str) -> list[BaseSkill]:
         """根据输入文本评分并返回候选 Skill。"""
         scored = []
         for skill in self.skills.values():
@@ -106,7 +105,7 @@ class SkillRegistry:
         scored.sort(key=lambda x: x[0], reverse=True)
         return [s for _, s in scored]
 
-    def get_skill(self, name: str) -> Optional[BaseSkill]:
+    def get_skill(self, name: str) -> BaseSkill | None:
         return self.skills.get(name)
 
 

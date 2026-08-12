@@ -14,12 +14,23 @@ try:
         SagError,
     )
 except ModuleNotFoundError:
-    class SagError(Exception): pass
-    class ConfigError(SagError): pass
-    class InvalidInputError(SagError): pass
-    class NonRetryableError(SagError): pass
-    class ResourceNotFoundError(SagError): pass
-    class RetryableError(SagError): pass
+    class SagError(Exception):
+        pass
+
+    class ConfigError(SagError):
+        pass
+
+    class InvalidInputError(SagError):
+        pass
+
+    class NonRetryableError(SagError):
+        pass
+
+    class ResourceNotFoundError(SagError):
+        pass
+
+    class RetryableError(SagError):
+        pass
 
 
 from sag_api.core.error_taxonomy import ErrorCode, ErrorLayer, ErrorStage

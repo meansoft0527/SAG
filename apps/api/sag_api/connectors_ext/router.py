@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from sag_api.connectors_ext.mcp_client import MCPServerConfig, global_mcp_client_manager
 from sag_api.connectors_ext.rss_feed import global_rss_manager
@@ -28,7 +29,7 @@ class RSSFetchRequest(BaseModel):
 
 
 @router.post("/crawl-url")
-async def crawl_url(req: WebCrawlRequest) -> Dict[str, Any]:
+async def crawl_url(req: WebCrawlRequest) -> dict[str, Any]:
     """抓取单个网页内容。"""
     res = await global_web_crawler.crawl_url(req.url)
     if not res["success"]:
@@ -37,26 +38,26 @@ async def crawl_url(req: WebCrawlRequest) -> Dict[str, Any]:
 
 
 @router.post("/crawl-sitemap")
-async def crawl_sitemap(req: SitemapCrawlRequest) -> List[str]:
+async def crawl_sitemap(req: SitemapCrawlRequest) -> list[str]:
     """抓取 Sitemap 获取链接。"""
     return await global_web_crawler.crawl_sitemap(req.sitemap_url, limit=req.limit)
 
 
 @router.post("/rss-fetch")
-async def fetch_rss(req: RSSFetchRequest) -> List[Dict[str, Any]]:
+async def fetch_rss(req: RSSFetchRequest) -> list[dict[str, Any]]:
     """抓取并解析 RSS 条目。"""
     return await global_rss_manager.fetch_feed(req.feed_url, limit=req.limit)
 
 
 @router.post("/mcp-servers")
-async def add_mcp_server(config: MCPServerConfig) -> Dict[str, str]:
+async def add_mcp_server(config: MCPServerConfig) -> dict[str, str]:
     """注册/更新外部 MCP 服务。"""
     global_mcp_client_manager.register_server(config)
     return {"status": "ok", "name": config.name}
 
 
 @router.get("/mcp-servers")
-async def list_mcp_servers() -> List[Dict[str, Any]]:
+async def list_mcp_servers() -> list[dict[str, Any]]:
     """获取所有已注册的外部 MCP 服务。"""
     res = []
     for s in global_mcp_client_manager.servers.values():

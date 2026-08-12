@@ -25,7 +25,8 @@ except ModuleNotFoundError:
     EventExtractor = Any
     DocumentLoadConfig = Any
     DocumentLoader = Any
-    class MarkdownParser: pass
+    class MarkdownParser:
+        pass
 
 
 from sag_api.core.logging import get_logger

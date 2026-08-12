@@ -3,11 +3,11 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import dataclass, field
+
 try:
     from datetime import UTC
 except ImportError:
-    from datetime import timezone
-    UTC = timezone.utc
+    UTC = UTC
 from datetime import datetime
 
 try:
@@ -15,11 +15,10 @@ try:
 except ImportError:
     from enum import Enum
 
-    class StrEnum(str, Enum):
+    class StrEnum(str, Enum):  # noqa: UP042
         pass
 
 from typing import Any, Protocol, runtime_checkable
-
 
 
 class RuntimeStatus(StrEnum):

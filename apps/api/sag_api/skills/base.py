@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict, List, Optional
+from collections.abc import AsyncIterator
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -13,8 +15,8 @@ class SkillContext(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     user_input: str
-    conversation_id: Optional[str] = None
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    conversation_id: str | None = None
+    parameters: dict[str, Any] = Field(default_factory=dict)
     sag_engine: Any = None
     llm: Any = None
     tool_runner: Any = None
@@ -25,9 +27,9 @@ class SkillResult(BaseModel):
     """Skill 执行输出。"""
 
     content: str
-    citations: List[Dict[str, Any]] = Field(default_factory=list)
-    artifacts: List[Dict[str, Any]] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    citations: list[dict[str, Any]] = Field(default_factory=list)
+    artifacts: list[dict[str, Any]] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class BaseSkill(ABC):

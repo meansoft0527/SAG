@@ -8,7 +8,8 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any, List, Optional
+from typing import Any
+
 from sag_api.core.logging import get_logger
 
 log = get_logger("sag.local_embedding")
@@ -33,7 +34,7 @@ def _get_local_model() -> Any:
     return _LOCAL_MODEL
 
 
-def generate_local_embedding(text: str, dim: int = 1536) -> List[float]:
+def generate_local_embedding(text: str, dim: int = 1536) -> list[float]:
     """生成本地向量表示。"""
     model = _get_local_model()
     if model != "feature_hash" and hasattr(model, "embed"):
@@ -62,7 +63,6 @@ _FORCE_LOCAL_EMBEDDING = False
 def apply_local_embedding_patch() -> None:
     """给 zleap.sag 的 EmbeddingClient 打补丁，支持无凭证或 API 失效时自动启动本地向量模型。"""
     try:
-        import zleap.sag.core.ai.embedding as orig_mod
         from zleap.sag.core.ai.embedding import EmbeddingClient
     except ModuleNotFoundError:
         return
@@ -70,7 +70,7 @@ def apply_local_embedding_patch() -> None:
     original_generate = EmbeddingClient.generate
     original_batch_generate = EmbeddingClient.batch_generate
 
-    async def patched_generate(self: EmbeddingClient, text: str) -> List[float]:
+    async def patched_generate(self: EmbeddingClient, text: str) -> list[float]:
         global _FORCE_LOCAL_EMBEDDING
         # 如果已切换为强制本地模式，或 API Key 缺失/为占位符，直接使用本地向量生成器
         if _FORCE_LOCAL_EMBEDDING or not self.api_key or self.api_key in ("not-configured", "local", "None"):
@@ -83,7 +83,7 @@ def apply_local_embedding_patch() -> None:
             log.warning("外部向量 API 响应失败 (%s)，已锁定并自动切至本地向量模型", e)
             return generate_local_embedding(text)
 
-    async def patched_batch_generate(self: EmbeddingClient, texts: List[str]) -> List[List[float]]:
+    async def patched_batch_generate(self: EmbeddingClient, texts: list[str]) -> list[list[float]]:
         global _FORCE_LOCAL_EMBEDDING
         if _FORCE_LOCAL_EMBEDDING or not self.api_key or self.api_key in ("not-configured", "local", "None"):
             return [generate_local_embedding(t) for t in texts]

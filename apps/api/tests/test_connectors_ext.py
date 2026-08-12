@@ -1,15 +1,14 @@
 """Phase 4 测试：验证数据源扩展 (Web 抓取, RSS 订阅, MCP Client)。"""
 
-import pytest
 import asyncio
 
-from sag_api.connectors_ext.web_crawler import WebCrawler
-from sag_api.connectors_ext.rss_feed import RSSFeedManager
 from sag_api.connectors_ext.mcp_client import MCPClientManager, MCPServerConfig
+from sag_api.connectors_ext.rss_feed import RSSFeedManager
 
 
 def test_rss_manager_parse():
     rss_manager = RSSFeedManager()
+    assert rss_manager is not None
     xml_sample = """<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0">
     <channel>

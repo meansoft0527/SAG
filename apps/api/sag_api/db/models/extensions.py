@@ -1,7 +1,6 @@
 """新增模块的数据库模型（Skill、Wiki、Connectors、Agent Tasks、MCP Servers）。"""
 
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,7 +16,7 @@ class SkillModel(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
     version: Mapped[str] = mapped_column(String(32), nullable=False, default="1.0.0")
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     skill_type: Mapped[str] = mapped_column(String(32), nullable=False)  # prompt/tool/workflow/composite
     is_builtin: Mapped[bool] = mapped_column(Boolean, default=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -39,7 +38,7 @@ class WikiPageModel(Base):
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     page_type: Mapped[str] = mapped_column(String(32), nullable=False)  # source/concept/entity/topic
-    source_refs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON 字符串
+    source_refs: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON 字符串
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -52,7 +51,7 @@ class WikiChangelogModel(Base):
     __tablename__ = "wiki_changelog"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    page_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    page_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     action: Mapped[str] = mapped_column(String(32), nullable=False)  # create/update/link
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -67,8 +66,8 @@ class ConnectorModel(Base):
     type: Mapped[str] = mapped_column(String(32), nullable=False)  # rss/web_crawl/api/mcp
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     config: Mapped[str] = mapped_column(Text, nullable=False)  # JSON 配置
-    source_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    last_sync: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_sync: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     sync_interval: Mapped[int] = mapped_column(Integer, default=3600)  # 秒
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -80,11 +79,11 @@ class AgentTaskModel(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     title: Mapped[str] = mapped_column(String(256), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="pending")  # pending/running/done/failed
-    result: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    result: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class MCPServerModel(Base):

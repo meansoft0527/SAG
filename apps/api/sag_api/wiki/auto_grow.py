@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,11 +31,11 @@ class AutoGrowEngine:
     def wiki_manager(self) -> WikiManager:
         return self._wiki_manager or get_wiki_manager()
 
-    async def rebuild_wiki_from_knowledge_base(self, session: Optional[AsyncSession] = None) -> Dict[str, int]:
+    async def rebuild_wiki_from_knowledge_base(self, session: AsyncSession | None = None) -> dict[str, int]:
         """全量扫描数据库中已有文档与信源，抽取并生成/更新 Sources、Concepts、Entities、Topics 四类 Wiki 页面。"""
         log.info("开始全量重构与扫描自生长 Wiki 概念图谱...")
 
-        async def _run_scan(s: AsyncSession) -> Dict[str, int]:
+        async def _run_scan(s: AsyncSession) -> dict[str, int]:
             docs = (await s.execute(select(Document))).scalars().all()
             sources_list = (await s.execute(select(Source))).scalars().all()
 
@@ -157,7 +158,7 @@ class AutoGrowEngine:
         query: str,
         answer: str,
         llm: Any = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """根据本次 QA 问答互动自动沉淀 Wiki 概念页面。"""
         log.info("触发问答互动 Wiki 自生长: query='%s'", query[:30])
 

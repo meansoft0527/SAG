@@ -8,13 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import socket
+
 try:
     from datetime import UTC
 except ImportError:
-    from datetime import timezone
-    UTC = timezone.utc
+    UTC = UTC
 from datetime import datetime
-
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -756,8 +755,10 @@ class ExecuteCodeTool(Tool):
                 content=(
                     f"⚠️ 代码执行报错: `{error.__class__.__name__}: {error}`\n\n"
                     f"**说明**：`code_runner` 是**纯代码安全执行器**，用于运行 Python 代码与数据计算。\n"
-                    f"- 若需**运行计算或脚本**，请输入 Python 代码（例如：`return 128 * 4 + 50` 或 `import math; return math.sqrt(144)`）。\n"
-                    f"- 若需**使用 AI 撰写/生成页面代码**（如“写一个抽签页面”），请使用 `writer` 或 `data_analyst` 技能或直接在对话框中提问。"
+                    "- 若需**运行计算或脚本**，请输入 Python 代码"
+                    "（例如：`return 128 * 4 + 50` 或 `import math; return math.sqrt(144)`）。\n"
+                    "- 若需**使用 AI 撰写/生成页面代码**（如“写一个抽签页面”），"
+                    "请使用 `writer` 或 `data_analyst` 技能或直接在对话框中提问。"
                 ),
                 data={"error": str(error), "success": False},
             )
