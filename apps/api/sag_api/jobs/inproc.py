@@ -50,6 +50,18 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+async def _commit_with_retry(session: AsyncSession, retries: int = _RECOVERY_LOCK_RETRIES) -> None:
+    for attempt in range(retries):
+        try:
+            await session.commit()
+            return
+        except OperationalError as error:
+            locked = "database is locked" in str(error).lower()
+            if not locked or attempt == retries - 1:
+                raise
+            await asyncio.sleep(0.08 * (2**attempt))
+
+
 def _is_retryable(exc: Exception) -> bool:
     """瞬时故障（限流/超时/上游暂不可用）可重试；输入/配置类错误不重试。"""
     return isinstance(
@@ -135,7 +147,7 @@ class InProcessAsyncQueue(JobQueue):
                             job.payload,
                             blocked_reason=DELETE_WAITING_SOURCE,
                         )
-                        await session.commit()
+                        await _commit_with_retry(session)
                         source_id = job.source_id
                         if source_id in self._source_maintenance_ready:
                             await self._dispatch_next_maintenance(source_id)
@@ -151,7 +163,7 @@ class InProcessAsyncQueue(JobQueue):
                             job.payload,
                             blocked_reason=SOURCE_MAINTENANCE,
                         )
-                        await session.commit()
+                        await _commit_with_retry(session)
                         return
                     if get_blocked_reason(job.payload):
                         return
@@ -249,7 +261,7 @@ class InProcessAsyncQueue(JobQueue):
                         document.error = message
                 elif job.type == JobType.REPROCESS_DOCUMENT and job.document_id:
                     await _mark_reprocess_failed(session, job.document_id, message)
-            await session.commit()
+            await _commit_with_retry(session)
 
         active = self._source_maintenance_jobs.get(source_id)
         if active is None:
@@ -453,7 +465,7 @@ class InProcessAsyncQueue(JobQueue):
                     return
                 job.payload = set_scheduler(job.payload, blocked_reason=None)
                 priority = get_priority(job.payload)
-                await session.commit()
+                await _commit_with_retry(session)
                 job_id = job.id
         if close_empty_window:
             await self._close_source_maintenance(source_id)
@@ -527,7 +539,7 @@ class InProcessAsyncQueue(JobQueue):
                             payload["resume_requested"] = True
                             blocked.payload = payload
                             candidate_ready_ids.add(blocked.id)
-                        await session.commit()
+                        await _commit_with_retry(session)
                     source = candidate_source
                     ready_ids = candidate_ready_ids
                     break
@@ -858,7 +870,7 @@ class InProcessAsyncQueue(JobQueue):
                             )
                             payload["resume_requested"] = True
                             job.payload = payload
-                    await session.commit()
+                    await _commit_with_retry(session)
                 break
             except OperationalError as error:
                 locked = "database is locked" in str(error).lower()
@@ -939,7 +951,7 @@ class InProcessAsyncQueue(JobQueue):
                     error=None,
                 )
             )
-            await session.commit()
+            await _commit_with_retry(session)
             if claim.rowcount != 1:
                 return
             await session.refresh(job)
@@ -1064,7 +1076,7 @@ class InProcessAsyncQueue(JobQueue):
                 ):
                     await _converge_document_paused(session, job)
                     log.info("任务已被并发暂停，忽略 handler 失败 job=%s", job_id)
-                    await session.commit()
+                    await _commit_with_retry(session)
                     return
                 msg = getattr(e, "message", None) or str(e)
                 attempts = job.attempts if job is not None else settings.job_max_attempts
