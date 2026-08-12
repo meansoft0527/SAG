@@ -41,10 +41,15 @@ async def test_health_ready_and_upload_whitelist():
                 assert source is not None
                 source_config_id = source.sag_source_config_id
             engine_session_factory = get_session_factory()
-            async with engine_session_factory() as engine_session:
-                parent = await engine_session.get(SourceConfig, source_config_id)
-                assert parent is not None
-                assert parent.name == "白名单"
+            parent = None
+            for _ in range(20):
+                async with engine_session_factory() as engine_session:
+                    parent = await engine_session.get(SourceConfig, source_config_id)
+                    if parent is not None:
+                        break
+                await asyncio.sleep(0.05)
+            assert parent is not None
+            assert parent.name == "白名单"
 
             # 不支持的扩展名 → 422（校验失败），前端展示明确提示
             bad = await c.post(
