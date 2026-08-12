@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import hashlib
+import sys
 from typing import Any
 
 from sag_api.core.logging import get_logger
@@ -22,6 +23,12 @@ def _get_local_model() -> Any:
     global _LOCAL_MODEL, _MODEL_LOAD_ATTEMPTED
     if not _MODEL_LOAD_ATTEMPTED:
         _MODEL_LOAD_ATTEMPTED = True
+        # PyInstaller 冻结环境中 ONNX Runtime 可能触发 ACCESS_VIOLATION（0xC0000005）；
+        # 跳过 fastembed 加载，直接使用纯 Python 确定性特征向量，避免进程崩溃。
+        if getattr(sys, "frozen", False):
+            log.info("冻结环境检测到，跳过 fastembed/ONNX 加载，使用本地特征哈希向量")
+            _LOCAL_MODEL = "feature_hash"
+            return _LOCAL_MODEL
         try:
             from fastembed import TextEmbedding
 

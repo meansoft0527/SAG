@@ -154,6 +154,8 @@ function startPythonRuntime(
       ...process.env,
       PYTHONUNBUFFERED: "1",
       PYTHONDONTWRITEBYTECODE: "1",
+      PYTHONUTF8: "1",
+      LITELLM_LOCAL_MODEL_COST_MAP: "true",
       SAG_ENVIRONMENT: "prod",
       SAG_DEBUG: "false",
       SAG_SECRET_KEY: secretKey,
