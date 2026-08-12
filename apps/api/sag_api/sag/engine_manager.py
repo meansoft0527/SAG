@@ -884,7 +884,7 @@ class EngineManager:
                     },
                 )
             log.info("精确检索空结果，回退快速检索 source_config_id=%s", source_config_id)
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             if strategy == "vector" or not self._settings.search_fallback_vector:
                 return SearchOutcome(
                     query=query,
