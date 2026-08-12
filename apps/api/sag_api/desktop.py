@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 
+os.environ.setdefault("NPY_DISABLE_CPU_FEATURES", "X86_V2,X86_V3,X86_V4,AVX,AVX2,AVX512F,FMA3")
+
 import uvicorn
 
 
