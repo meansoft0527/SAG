@@ -369,15 +369,83 @@ def _mineru_key_fingerprint(settings: Settings) -> str:
     return hashlib.sha256(settings.mineru_api_key.encode()).hexdigest()[:12]
 
 
+def _read_odf_text(path: str) -> str:
+    """从 ODF / ODT / ODS / ODP (OpenDocument 格式) 提取文本内容。"""
+    import xml.etree.ElementTree as et
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(path, "r") as z:
+            if "content.xml" not in z.namelist():
+                return ""
+            xml_bytes = z.read("content.xml")
+            root = et.fromstring(xml_bytes)
+            lines = []
+            for elem in root.iter():
+                tag = elem.tag.rsplit("}", 1)[-1]
+                if tag in ("p", "h") and elem.text and elem.text.strip():
+                    text = elem.text.strip()
+                    if tag == "h":
+                        lines.append(f"## {text}")
+                    else:
+                        lines.append(text)
+            return "\n\n".join(lines)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _read_pdf_fallback_text(path: str) -> str:
+    """使用 pypdf 提取 PDF 文本页内容。"""
+    try:
+        import pypdf
+
+        reader = pypdf.PdfReader(path)
+        pages = []
+        for i, page in enumerate(reader.pages):
+            text = page.extract_text() or ""
+            if text.strip():
+                pages.append(f"### 第 {i + 1} 页\n\n{text.strip()}")
+        return "\n\n".join(pages)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _fallback_extract_text(path: str) -> str:
+    """在 MarkItDown 解析为空时的多维度容错回退机制（ODF/PDF/纯文本）。"""
+    suffix = os.path.splitext(path)[1].lower()
+    if suffix in {".odf", ".odt", ".ods", ".odp"}:
+        odf_text = _read_odf_text(path)
+        if odf_text.strip():
+            return odf_text
+    if suffix == ".pdf":
+        pdf_text = _read_pdf_fallback_text(path)
+        if pdf_text.strip():
+            return pdf_text
+    try:
+        decoded = read_text_file(path)
+        return decoded.text.strip()
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 async def _convert_with_markitdown(path: str) -> str:
     try:
         markdown = await asyncio.to_thread(_markitdown_sync, path)
     except (ImportError, ModuleNotFoundError) as exc:
         raise UpstreamError("MarkItDown 未安装，无法解析该文件") from exc
     except Exception as exc:  # noqa: BLE001 - 第三方转换器错误统一映射
+        # 如果 MarkItDown 异常，尝试容错回退解析
+        fallback = await asyncio.to_thread(_fallback_extract_text, path)
+        if fallback and _is_meaningful_markdown(fallback):
+            return fallback.strip() + "\n"
         raise ValidationError(f"MarkItDown 解析失败：{exc}") from exc
+
     markdown = markdown.strip()
     if not _is_meaningful_markdown(markdown):
+        # MarkItDown 返回了 None / "" / null / [] 等空结果时触发强力容错回退
+        fallback = await asyncio.to_thread(_fallback_extract_text, path)
+        if fallback and _is_meaningful_markdown(fallback):
+            return fallback.strip() + "\n"
         raise ValidationError("MarkItDown 未从文件中解析出有效文本")
     return markdown + "\n"
 

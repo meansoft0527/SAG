@@ -241,8 +241,8 @@ class Settings(BaseSettings):
 
     @property
     def mineru_configured(self) -> bool:
-        """MinerU 是否具备可调用的端点与密钥。"""
-        return bool(self.mineru_base_url and self.mineru_api_key)
+        """MinerU 是否具备可调用的端点（私有部署 endpoint 可选 key）。"""
+        return bool(self.mineru_base_url and self.mineru_base_url.strip())
 
     @property
     def effective_document_parser(self) -> Literal["markitdown", "mineru"]:
