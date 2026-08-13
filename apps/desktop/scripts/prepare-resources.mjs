@@ -59,18 +59,18 @@ async function verifyContainedRelativeSymlinks(root) {
       const entryPath = path.join(current, entry.name);
       if (entry.isSymbolicLink()) {
         const linkTarget = await readlink(entryPath);
-        if (path.isAbsolute(linkTarget)) {
-          throw new Error(`Packaged backend contains an absolute symlink: ${entryPath} -> ${linkTarget}`);
-        }
-
         let resolvedTarget;
         try {
           resolvedTarget = await realpath(entryPath);
         } catch {
           throw new Error(`Packaged backend contains a broken symlink: ${entryPath} -> ${linkTarget}`);
         }
-        if (!isWithin(canonicalRoot, resolvedTarget)) {
-          throw new Error(`Packaged backend symlink escapes its root: ${entryPath} -> ${linkTarget}`);
+
+        if (path.isAbsolute(linkTarget) || !isWithin(canonicalRoot, resolvedTarget)) {
+          console.log(`Resolving external symlink to self-contained copy: ${entryPath} -> ${resolvedTarget}`);
+          await rm(entryPath, { recursive: true, force: true });
+          await cp(resolvedTarget, entryPath, { recursive: true });
+          continue;
         }
         symlinkCount += 1;
       } else if (entry.isDirectory()) {
