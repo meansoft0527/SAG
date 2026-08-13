@@ -463,11 +463,13 @@ def _fallback_extract_text(path: str) -> str:
         pdf_text = _read_pdf_fallback_text(path)
         if pdf_text.strip():
             return pdf_text
-    try:
-        decoded = read_text_file(path)
-        return decoded.text.strip()
-    except Exception:  # noqa: BLE001
-        return ""
+    if is_plain_text_path(path):
+        try:
+            decoded = read_text_file(path)
+            return decoded.text.strip()
+        except Exception:  # noqa: BLE001
+            return ""
+    return ""
 
 
 async def _convert_with_markitdown(path: str) -> str:
@@ -518,7 +520,14 @@ def _is_meaningful_markdown(markdown: str) -> bool:
 def _markitdown_sync(path: str) -> str:
     from markitdown import MarkItDown
 
-    result = MarkItDown().convert(path)
+    try:
+        result = MarkItDown().convert(path)
+    except Exception:  # noqa: BLE001
+        fallback = _fallback_extract_text(path)
+        if fallback and _is_meaningful_markdown(fallback):
+            return fallback
+        raise
+
     markdown = getattr(result, "markdown", None)
     if markdown is None:  # 兼容 0.0.x / 早期 0.1.x 返回对象
         markdown = getattr(result, "text_content", None)
