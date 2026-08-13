@@ -770,7 +770,32 @@ class InProcessAsyncQueue(JobQueue):
                             self.begin_source_maintenance(job.source_id, job.id)
                     for job in rows:
                         if job.status == JobStatus.RUNNING:
-                            job.status = JobStatus.QUEUED
+                            job.attempts += 1
+                            if job.attempts >= settings.job_max_attempts:
+                                job.status = JobStatus.FAILED
+                                job.finished_at = _now()
+                                job.error = (
+                                    f"任务在执行期间引发系统级进程中断（已被终止重试，累计 {job.attempts} 次）。"
+                                    "如果使用 LanceDB 嵌入式向量，请检查服务器 CPU 或虚拟机是否已开启 AVX2 指令集透传。"
+                                )
+                                log.error(
+                                    "任务恢复：job=%s 在 RUNNING 状态下异常中断，已达最大重试次数(%d)，标记为失败",
+                                    job.id,
+                                    settings.job_max_attempts,
+                                )
+                                if job.type == JobType.PROCESS_DOCUMENT and job.document_id:
+                                    document = await session.get(Document, job.document_id)
+                                    if document is not None:
+                                        document.status = DocumentStatus.FAILED
+                                        document.error = job.error
+                            else:
+                                job.status = JobStatus.QUEUED
+                                log.warning(
+                                    "任务恢复：job=%s 在 RUNNING 状态下异常中断，尝试次数增加至 %d/%d，设为 QUEUED 重试",
+                                    job.id,
+                                    job.attempts,
+                                    settings.job_max_attempts,
+                                )
 
                     transition_documents = list(
                         (
