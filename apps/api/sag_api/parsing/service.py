@@ -370,13 +370,12 @@ def _mineru_key_fingerprint(settings: Settings) -> str:
 
 
 def _read_ofd_text(path: str) -> str:
-    """从 OFD (Open Fixed-layout Document 国标电子公文版式文档) 提取文本内容。"""
+    """从 OFD (Open Fixed-layout Document 国标电子公文版式文档) 提取纯文本内容。"""
     import xml.etree.ElementTree as et
     import zipfile
 
     basename = os.path.basename(path)
     filename_without_ext = os.path.splitext(basename)[0]
-    # 清理文件名中可能包含的哈希前缀（如 454d44a1d8f44ef3b123e18ffa7803a8_...）
     if "_" in filename_without_ext and len(filename_without_ext.split("_", 1)[0]) >= 16:
         clean_title = filename_without_ext.split("_", 1)[1]
     else:
@@ -388,26 +387,28 @@ def _read_ofd_text(path: str) -> str:
     try:
         with zipfile.ZipFile(path, "r") as z:
             xml_names = [
-                name
-                for name in z.namelist()
-                if name.lower().endswith(".xml")
-                and ("content" in name.lower() or "page" in name.lower())
+                name for name in z.namelist() if name.lower().endswith(".xml")
             ]
 
             for xml_name in xml_names:
-                page_count += 1
+                if "page" in xml_name.lower() or "content" in xml_name.lower():
+                    page_count += 1
                 try:
                     xml_bytes = z.read(xml_name)
                     root = et.fromstring(xml_bytes)
                     for elem in root.iter():
-                        tag = elem.tag.rsplit("}", 1)[-1]
+                        text_str = (elem.text or "").strip()
                         if (
-                            tag in ("TextCode", "Text", "Paragraph") or "text" in tag.lower()
-                        ) and elem.text and elem.text.strip():
-                            text_str = elem.text.strip()
-                            # 过滤 XML 标头与底层技术标记
-                            if not text_str.startswith("<?xml") and not text_str.startswith("<ofd:"):
-                                lines.append(text_str)
+                            text_str
+                            and not text_str.startswith("<?xml")
+                            and not text_str.startswith("<ofd:")
+                            and not text_str.startswith("http://")
+                            and not text_str.startswith("https://")
+                        ):
+                            # 保留包含中文或有意义语义的文本行，去重防噪
+                            if any("\u4e00" <= char <= "\u9fff" for char in text_str) or len(text_str) >= 6:
+                                if text_str not in lines and text_str != clean_title:
+                                    lines.append(text_str)
                 except Exception:  # noqa: BLE001
                     continue
     except Exception:  # noqa: BLE001
@@ -416,7 +417,6 @@ def _read_ofd_text(path: str) -> str:
     if lines:
         return f"# {clean_title}\n\n" + "\n\n".join(lines)
 
-    # 扫描件 OFD (如 Pantum/联想/方正等扫描助手生成) 容错文本生成
     meta_info = f"共 {page_count} 页" if page_count > 0 else "扫描件版式"
     return (
         f"# {clean_title}\n\n"
