@@ -199,6 +199,10 @@ function startPythonRuntime(
         SAG_CORS_ORIGINS: webOrigin,
         SAG_DESKTOP_HOST: desktopConfig.apiHost,
         SAG_DESKTOP_PORT: String(apiPort),
+        // 海光 (Hygon C86) 及 AMD Zen 架构 CPU 原生 SIMD 指令透传与兼容设置
+        OPENBLAS_CORETYPE: "ZEN",
+        MKL_DEBUG_CPU_TYPE: "5",
+        BLIS_ARCH: "zen",
       },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
