@@ -369,6 +369,44 @@ def _mineru_key_fingerprint(settings: Settings) -> str:
     return hashlib.sha256(settings.mineru_api_key.encode()).hexdigest()[:12]
 
 
+def _read_ofd_text(path: str) -> str:
+    """从 OFD (Open Fixed-layout Document 国标电子公文版式文档) 提取文本内容。"""
+    import xml.etree.ElementTree as et
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(path, "r") as z:
+            xml_names = [
+                name
+                for name in z.namelist()
+                if name.lower().endswith(".xml")
+                and (
+                    "content" in name.lower()
+                    or "page" in name.lower()
+                    or "document" in name.lower()
+                )
+            ]
+            if not xml_names:
+                xml_names = [name for name in z.namelist() if name.lower().endswith(".xml")]
+
+            lines: list[str] = []
+            for xml_name in xml_names:
+                try:
+                    xml_bytes = z.read(xml_name)
+                    root = et.fromstring(xml_bytes)
+                    for elem in root.iter():
+                        tag = elem.tag.rsplit("}", 1)[-1]
+                        if (
+                            tag in ("TextCode", "Text", "Paragraph") or "text" in tag.lower()
+                        ) and elem.text and elem.text.strip():
+                            lines.append(elem.text.strip())
+                except Exception:  # noqa: BLE001
+                    continue
+            return "\n\n".join(lines)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _read_odf_text(path: str) -> str:
     """从 ODF / ODT / ODS / ODP (OpenDocument 格式) 提取文本内容。"""
     import xml.etree.ElementTree as et
@@ -411,8 +449,12 @@ def _read_pdf_fallback_text(path: str) -> str:
 
 
 def _fallback_extract_text(path: str) -> str:
-    """在 MarkItDown 解析为空时的多维度容错回退机制（ODF/PDF/纯文本）。"""
+    """在 MarkItDown 解析为空时的多维度容错回退机制（OFD/ODF/PDF/纯文本）。"""
     suffix = os.path.splitext(path)[1].lower()
+    if suffix == ".ofd":
+        ofd_text = _read_ofd_text(path)
+        if ofd_text.strip():
+            return ofd_text
     if suffix in {".odf", ".odt", ".ods", ".odp"}:
         odf_text = _read_odf_text(path)
         if odf_text.strip():
