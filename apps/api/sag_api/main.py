@@ -4,12 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-
-# 海光 (Hygon C86) 及 AMD Zen 架构 CPU 兼容性设置（防止原生 C/Rust SIMD 误判 CPUID）
-os.environ.setdefault("OPENBLAS_CORETYPE", "ZEN")
-os.environ.setdefault("MKL_DEBUG_CPU_TYPE", "5")
-os.environ.setdefault("BLIS_ARCH", "zen")
-
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
