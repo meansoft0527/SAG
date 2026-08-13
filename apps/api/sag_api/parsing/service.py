@@ -433,7 +433,7 @@ def _read_odf_text(path: str) -> str:
 
 
 def _read_pdf_fallback_text(path: str) -> str:
-    """使用 pypdf 提取 PDF 文本页内容。"""
+    """使用 pypdf 与 pdfminer_six 双重提取 PDF 文本页内容。"""
     try:
         import pypdf
 
@@ -443,9 +443,21 @@ def _read_pdf_fallback_text(path: str) -> str:
             text = page.extract_text() or ""
             if text.strip():
                 pages.append(f"### 第 {i + 1} 页\n\n{text.strip()}")
-        return "\n\n".join(pages)
+        if pages:
+            return "\n\n".join(pages)
     except Exception:  # noqa: BLE001
-        return ""
+        pass
+
+    try:
+        from pdfminer.high_level import extract_text as pdfminer_extract_text
+
+        text = pdfminer_extract_text(path)
+        if text and text.strip():
+            return text.strip()
+    except Exception:  # noqa: BLE001
+        pass
+
+    return ""
 
 
 def _fallback_extract_text(path: str) -> str:
