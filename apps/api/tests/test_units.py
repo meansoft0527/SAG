@@ -91,7 +91,7 @@ def test_litellm_policy_maps_qwen_thinking_option(extra_body, expected_reasoning
     )
     request = apply_litellm_completion_policy(
         configured,
-        {"model": configured.routed_llm_model, "messages": []},
+        {"model": "openai/qwen3.6-flash", "messages": []},
     )
 
     assert request.get("reasoning_effort") == expected_reasoning
@@ -290,16 +290,15 @@ async def test_llm_timeout_and_retries_reach_unified_client(monkeypatch):
 
     client = generation_llm.LLMClient(configured)
     assert await client.complete([{"role": "user", "content": "ping"}]) == "pong"
-    assert seen["model"] == "openai/qwen3.6-flash"
+    assert seen["model"] == "openai/ds"
     assert seen["timeout"] == 45
     assert seen["num_retries"] == 3
-    assert seen["reasoning_effort"] == "none"
-    assert "reasoning_effort" in seen["allowed_openai_params"]
+    assert "reasoning_effort" not in seen
     assert "extra_body" not in seen
 
     engine = build_engine_config(configured)
     assert engine.llm.provider == "litellm"
-    assert engine.llm.model == "openai/qwen3.6-flash"
+    assert engine.llm.model == "openai/ds"
     assert engine.llm.timeout == 45
     assert engine.llm.max_retries == 3
 

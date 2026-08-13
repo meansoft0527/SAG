@@ -163,6 +163,12 @@ function backendExecutable(resourcesPath: string): string {
   return path.join(resourcesPath, "backend", "sag-api", filename);
 }
 
+function isIllegalInstructionCode(code: number | null): boolean {
+  if (code === null) return false;
+  // 3221225501 (unsigned) or -1073741795 (signed 32-bit) = 0xC000001D STATUS_ILLEGAL_INSTRUCTION
+  return code === 3221225501 || code === -1073741795;
+}
+
 function startPythonRuntime(
   resourcesPath: string,
   userDataDir: string,
@@ -174,31 +180,79 @@ function startPythonRuntime(
     throw new Error(`Packaged Python backend not found: ${executable}`);
   }
   const secretKey = loadOrCreateSecret(userDataDir);
-  const child = spawn(executable, [], {
-    cwd: userDataDir,
-    env: {
-      ...process.env,
-      PYTHONUNBUFFERED: "1",
-      PYTHONDONTWRITEBYTECODE: "1",
-      PYTHONUTF8: "1",
-      LITELLM_LOCAL_MODEL_COST_MAP: "true",
-      SAG_ENVIRONMENT: "prod",
-      SAG_DEBUG: "false",
-      SAG_SECRET_KEY: secretKey,
-      SAG_CORS_ORIGINS: webOrigin,
-      SAG_DESKTOP_HOST: desktopConfig.apiHost,
-      SAG_DESKTOP_PORT: String(apiPort),
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
-  pipeChildLogs(child, "api");
+  let isIntentionalStop = false;
+  const restartTimestamps: number[] = [];
+  let currentChild: ChildProcessByStdio<null, Readable, Readable> | null = null;
+
+  const spawnProcess = (): ChildProcessByStdio<null, Readable, Readable> => {
+    const child = spawn(executable, [], {
+      cwd: userDataDir,
+      env: {
+        ...process.env,
+        PYTHONUNBUFFERED: "1",
+        PYTHONDONTWRITEBYTECODE: "1",
+        PYTHONUTF8: "1",
+        LITELLM_LOCAL_MODEL_COST_MAP: "true",
+        SAG_ENVIRONMENT: "prod",
+        SAG_DEBUG: "false",
+        SAG_SECRET_KEY: secretKey,
+        SAG_CORS_ORIGINS: webOrigin,
+        SAG_DESKTOP_HOST: desktopConfig.apiHost,
+        SAG_DESKTOP_PORT: String(apiPort),
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
+
+    child.stdout.on("data", (chunk) => log.info(`[api] ${String(chunk).trimEnd()}`));
+    child.stderr.on("data", (chunk) => log.error(`[api] ${String(chunk).trimEnd()}`));
+    child.on("exit", (code, signal) => {
+      log.info("api exited", { code, signal });
+      if (isIntentionalStop) return;
+
+      const illegalInstruction = isIllegalInstructionCode(code);
+      if (illegalInstruction) {
+        log.error(
+          "[api] ⚠️ 检测到 STATUS_ILLEGAL_INSTRUCTION (0xC000001D / 3221225501) 崩溃！" +
+            " 此异常通常由于 Windows 虚拟机或旧 CPU 不支持 LanceDB 原生加速所需的 AVX2 指令集引发。",
+        );
+      }
+
+      const now = Date.now();
+      while (restartTimestamps.length > 0 && now - (restartTimestamps[0] ?? 0) > 60000) {
+        restartTimestamps.shift();
+      }
+
+      if (restartTimestamps.length < 3) {
+        restartTimestamps.push(now);
+        log.info(`[api] 后端异常退出，触发自愈自动重启机制 (${restartTimestamps.length}/3)...`);
+        setTimeout(() => {
+          if (!isIntentionalStop) {
+            currentChild = spawnProcess();
+          }
+        }, 800);
+      } else {
+        log.error(
+          "[api] ❌ 后端在 60 秒内连续崩溃 3 次，自愈重启守卫停止。" +
+            " 如果为 Windows 局域网部署，请检查 CPU/虚拟机是否已开启 AVX2 指令集，或显式配置私有局域网向量模型。",
+        );
+      }
+    });
+
+    return child;
+  };
+
+  currentChild = spawnProcess();
+
   return {
     stop: () => {
-      killProcessTree(child.pid);
-      try {
-        child.kill("SIGTERM");
-      } catch {}
+      isIntentionalStop = true;
+      if (currentChild?.pid) {
+        killProcessTree(currentChild.pid);
+        try {
+          currentChild.kill("SIGTERM");
+        } catch {}
+      }
     },
   };
 }

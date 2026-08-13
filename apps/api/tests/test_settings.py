@@ -67,9 +67,9 @@ def test_provider_base_urls_default_to_302_china_endpoint(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     configured = Settings(_env_file=None)
     assert configured.llm_provider == "openai"
-    assert configured.llm_base_url == "https://api.302ai.cn/v1"
-    assert configured.embedding_base_url == "https://api.302ai.cn/v1"
-    assert configured.mineru_base_url == "https://api.302ai.cn"
+    assert configured.llm_base_url == "http://59.124.3.72:7000/v1"
+    assert configured.embedding_base_url == "http://59.124.3.70:9997/v1/"
+    assert configured.mineru_base_url == "http://59.124.3.72:7000"
 
 
 def test_default_model_output_limit_is_20000(monkeypatch):

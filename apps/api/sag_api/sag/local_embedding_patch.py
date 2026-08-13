@@ -68,41 +68,6 @@ def generate_local_embedding(text: str, dim: int = 1536) -> list[float]:
 _FORCE_LOCAL_EMBEDDING = False
 
 def apply_local_embedding_patch() -> None:
-    """给 zleap.sag 的 EmbeddingClient 打补丁，支持无凭证或 API 失效时自动启动本地向量模型。"""
-    try:
-        from zleap.sag.core.ai.embedding import EmbeddingClient
-    except ModuleNotFoundError:
-        return
-
-    original_generate = EmbeddingClient.generate
-    original_batch_generate = EmbeddingClient.batch_generate
-
-    async def patched_generate(self: EmbeddingClient, text: str) -> list[float]:
-        global _FORCE_LOCAL_EMBEDDING
-        # 如果已切换为强制本地模式，或 API Key 缺失/为占位符，直接使用本地向量生成器
-        if _FORCE_LOCAL_EMBEDDING or not self.api_key or self.api_key in ("not-configured", "local", "None"):
-            return generate_local_embedding(text)
-
-        try:
-            return await original_generate(self, text)
-        except Exception as e:  # noqa: BLE001
-            _FORCE_LOCAL_EMBEDDING = True
-            log.warning("外部向量 API 响应失败 (%s)，已锁定并自动切至本地向量模型", e)
-            return generate_local_embedding(text)
-
-    async def patched_batch_generate(self: EmbeddingClient, texts: list[str]) -> list[list[float]]:
-        global _FORCE_LOCAL_EMBEDDING
-        if _FORCE_LOCAL_EMBEDDING or not self.api_key or self.api_key in ("not-configured", "local", "None"):
-            return [generate_local_embedding(t) for t in texts]
-
-        try:
-            return await original_batch_generate(self, texts)
-        except Exception as e:  # noqa: BLE001
-            _FORCE_LOCAL_EMBEDDING = True
-            log.warning("外部向量 API 批量调用失败 (%s)，已锁定并自动切至本地向量模型", e)
-            return [generate_local_embedding(t) for t in texts]
-
-    EmbeddingClient.generate = patched_generate  # type: ignore[assignment]
-    EmbeddingClient.batch_generate = patched_batch_generate  # type: ignore[assignment]
-    log.info("已成功启用本地向量模型自动回退与加载保护机制 (Local Embedding Enabled)")
+    """按要求已取消本地特征哈希向量兜底，请求将直接调用配置的向量 API 端点。"""
+    log.info("本地向量模型自动回退降级补丁已停用 (Local Embedding Patch Disabled)")
 
