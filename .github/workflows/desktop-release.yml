@@ -138,7 +138,7 @@ jobs:
       - name: Verify Intel x64 target toolchain
         shell: bash
         run: |
-          test "$(arch -x86_64 node -p 'process.arch')" = "x64" || {
+          test "$(node -p 'process.arch')" = "x64" || {
             echo "::error::Node.js must be x64."
             exit 1
           }
@@ -151,16 +151,16 @@ jobs:
       - name: Install frozen backend dependencies
         working-directory: apps/api
         run: |
-          arch -x86_64 uv python install 3.11 --arch x86_64
-          arch -x86_64 uv sync --frozen --extra desktop --python 3.11
-          arch -x86_64 uv pip install "numpy>=1.26.4,<2.0.0"
-          arch -x86_64 .venv/bin/python -c 'import platform; raise SystemExit(0 if platform.machine() in ("x86_64", "AMD64") else "Python must be x86_64")'
+          uv python install 3.11 --arch x86_64
+          uv sync --frozen --extra desktop --python 3.11
+          uv pip install "numpy>=1.26.4,<2.0.0"
+          .venv/bin/python -c 'import platform; raise SystemExit(0 if platform.machine() in ("x86_64", "AMD64") else "Python must be x86_64")'
       - name: Prepare macOS release payload
         working-directory: apps/desktop
-        run: arch -x86_64 npm run prepare:release
+        run: npm run prepare:release
       - name: Build macOS x64 release
         working-directory: apps/desktop
-        run: arch -x86_64 npm run package:mac:x64
+        run: npm run package:mac:x64
       - name: Upload macOS x64 release payload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
