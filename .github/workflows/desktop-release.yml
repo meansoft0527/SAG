@@ -109,6 +109,71 @@ jobs:
           retention-days: 7
           compression-level: 0
 
+  macos-x64:
+    name: macOS 13 · Intel x64
+    needs: [quality, metadata]
+    runs-on: macos-13
+    timeout-minutes: 120
+    continue-on-error: true
+    env:
+      SAG_UPDATE_GITHUB_REPOSITORY: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apps/web/package-lock.json
+            apps/desktop/package-lock.json
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+      - name: Verify native Intel x64 toolchain
+        shell: bash
+        run: |
+          test "$(uname -m)" = "x86_64" || {
+            echo "::error::macOS x64 release runner must be x86_64."
+            exit 1
+          }
+          test "$(node -p 'process.arch')" = "x64" || {
+            echo "::error::Node.js must be x64."
+            exit 1
+          }
+          python -c 'import platform; raise SystemExit(0 if platform.machine() in ("x86_64", "AMD64") else "Python must be x86_64")'
+      - name: Install Web dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Install desktop dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Install frozen backend dependencies
+        working-directory: apps/api
+        run: |
+          uv sync --frozen --extra desktop
+          uv pip install "numpy>=1.26.4,<2.0.0"
+      - name: Prepare macOS release payload
+        working-directory: apps/desktop
+        run: npm run prepare:release
+      - name: Build macOS x64 release
+        working-directory: apps/desktop
+        run: npm run package:mac:x64
+      - name: Upload macOS x64 release payload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-macos-x64
+          path: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
+            apps/desktop/release/*.blockmap
+          if-no-files-found: ignore
+          retention-days: 7
+          compression-level: 0
+
   windows:
     name: Windows 2025 · x64 · unsigned
     needs: [quality, metadata]
@@ -173,7 +238,7 @@ jobs:
     name: Publish immutable GitHub Release
     if: github.event_name == 'push'
 
-    needs: [metadata, macos, windows]
+    needs: [metadata, macos, macos-x64, windows]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -223,8 +288,9 @@ jobs:
         run: |
           printf '%s\n\n' \
             '## Downloads' \
-            '- **macOS Apple Silicon:** download the `.dmg` installer.' \
-            '- **Windows x64:** download the `Setup.exe` installer. It is currently unsigned, so Windows may show an unknown-publisher warning.' \
+            '- **macOS Apple Silicon (M系列芯片):** download the `SAG-*-mac-arm64.dmg` installer.' \
+            '- **macOS Intel (x86_64 芯片):** download the `SAG-*-mac-x64.dmg` installer.' \
+            '- **Windows x64:** download the `SAG-Setup-*-win-x64.exe` installer.' \
             '- Existing desktop installations receive this release through the stable automatic-update channel.' \
             '' \
             '## Changes' > release-notes.md

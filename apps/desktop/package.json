@@ -1,7 +1,7 @@
 {
   "name": "sag-desktop",
   "productName": "SAG",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "description": "SAG desktop client for macOS and Windows",
   "author": "Zleap AI",
@@ -27,6 +27,8 @@
     "prepare:release": "npm run build && npm run build:web && npm run build:backend && npm run prepare:resources",
     "package:dir": "npm run prepare:release && electron-builder --config electron-builder.config.cjs --dir",
     "package:mac": "electron-builder --config electron-builder.config.cjs --mac --arm64 --publish never",
+    "package:mac:arm64": "electron-builder --config electron-builder.config.cjs --mac --arm64 --publish never",
+    "package:mac:x64": "electron-builder --config electron-builder.config.cjs --mac --x64 --publish never",
     "package:win": "electron-builder --config electron-builder.config.cjs --win --x64 --publish never",
     "dist": "npm run prepare:release && electron-builder --config electron-builder.config.cjs --publish never",
     "dist:mac": "npm run prepare:release && npm run package:mac",

@@ -65,11 +65,11 @@ module.exports = {
     target: [
       {
         target: "dmg",
-        arch: ["arm64"]
+        arch: ["arm64", "x64"]
       },
       {
         target: "zip",
-        arch: ["arm64"]
+        arch: ["arm64", "x64"]
       }
     ],
     artifactName: "SAG-${version}-mac-${arch}.${ext}",
