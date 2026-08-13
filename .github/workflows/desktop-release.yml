@@ -110,9 +110,9 @@ jobs:
           compression-level: 0
 
   macos-x64:
-    name: macOS 13 · Intel x64
+    name: macOS 15 · Intel x64
     needs: [quality, metadata]
-    runs-on: macos-13
+    runs-on: macos-15
     timeout-minutes: 120
     continue-on-error: true
     env:
@@ -122,6 +122,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+          architecture: "x64"
           cache: npm
           cache-dependency-path: |
             apps/web/package-lock.json
@@ -129,17 +130,14 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
+          architecture: "x64"
       - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
           enable-cache: true
           cache-dependency-glob: apps/api/uv.lock
-      - name: Verify native Intel x64 toolchain
+      - name: Verify Intel x64 target toolchain
         shell: bash
         run: |
-          test "$(uname -m)" = "x86_64" || {
-            echo "::error::macOS x64 release runner must be x86_64."
-            exit 1
-          }
           test "$(node -p 'process.arch')" = "x64" || {
             echo "::error::Node.js must be x64."
             exit 1
