@@ -791,7 +791,7 @@ class InProcessAsyncQueue(JobQueue):
                             else:
                                 job.status = JobStatus.QUEUED
                                 log.warning(
-                                    "任务恢复：job=%s 在 RUNNING 状态下异常中断，尝试次数增加至 %d/%d，设为 QUEUED 重试",
+                                    "任务恢复：job=%s 在 RUNNING 下异常中断，尝试增加至 %d/%d 设为 QUEUED",
                                     job.id,
                                     job.attempts,
                                     settings.job_max_attempts,
