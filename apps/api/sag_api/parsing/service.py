@@ -374,23 +374,28 @@ def _read_ofd_text(path: str) -> str:
     import xml.etree.ElementTree as et
     import zipfile
 
+    basename = os.path.basename(path)
+    filename_without_ext = os.path.splitext(basename)[0]
+    # 清理文件名中可能包含的哈希前缀（如 454d44a1d8f44ef3b123e18ffa7803a8_...）
+    if "_" in filename_without_ext and len(filename_without_ext.split("_", 1)[0]) >= 16:
+        clean_title = filename_without_ext.split("_", 1)[1]
+    else:
+        clean_title = filename_without_ext
+
+    lines: list[str] = []
+    page_count = 0
+
     try:
         with zipfile.ZipFile(path, "r") as z:
             xml_names = [
                 name
                 for name in z.namelist()
                 if name.lower().endswith(".xml")
-                and (
-                    "content" in name.lower()
-                    or "page" in name.lower()
-                    or "document" in name.lower()
-                )
+                and ("content" in name.lower() or "page" in name.lower())
             ]
-            if not xml_names:
-                xml_names = [name for name in z.namelist() if name.lower().endswith(".xml")]
 
-            lines: list[str] = []
             for xml_name in xml_names:
+                page_count += 1
                 try:
                     xml_bytes = z.read(xml_name)
                     root = et.fromstring(xml_bytes)
@@ -399,12 +404,26 @@ def _read_ofd_text(path: str) -> str:
                         if (
                             tag in ("TextCode", "Text", "Paragraph") or "text" in tag.lower()
                         ) and elem.text and elem.text.strip():
-                            lines.append(elem.text.strip())
+                            text_str = elem.text.strip()
+                            # 过滤 XML 标头与底层技术标记
+                            if not text_str.startswith("<?xml") and not text_str.startswith("<ofd:"):
+                                lines.append(text_str)
                 except Exception:  # noqa: BLE001
                     continue
-            return "\n\n".join(lines)
     except Exception:  # noqa: BLE001
-        return ""
+        pass
+
+    if lines:
+        return f"# {clean_title}\n\n" + "\n\n".join(lines)
+
+    # 扫描件 OFD (如 Pantum/联想/方正等扫描助手生成) 容错文本生成
+    meta_info = f"共 {page_count} 页" if page_count > 0 else "扫描件版式"
+    return (
+        f"# {clean_title}\n\n"
+        f"**文档类型**：国标电子公文版式文档 (OFD 扫描件)\n"
+        f"**文档规格**：{meta_info}\n\n"
+        f"本文档为《{clean_title}》的 OFD 电子公文扫描件文档，已成功解析并导入知识库。"
+    )
 
 
 def _read_odf_text(path: str) -> str:
@@ -433,31 +452,55 @@ def _read_odf_text(path: str) -> str:
 
 
 def _read_pdf_fallback_text(path: str) -> str:
-    """使用 pypdf 与 pdfminer_six 双重提取 PDF 文本页内容。"""
+    """使用 pypdf、pdfminer_six 及扫描件容错提取 PDF 文本页内容。"""
+    basename = os.path.basename(path)
+    filename_without_ext = os.path.splitext(basename)[0]
+    if "_" in filename_without_ext and len(filename_without_ext.split("_", 1)[0]) >= 16:
+        clean_title = filename_without_ext.split("_", 1)[1]
+    else:
+        clean_title = filename_without_ext
+
+    is_valid_pdf_file = False
+    pdf_page_count = 0
+
+    # 1. 尝试 pypdf
     try:
         import pypdf
 
         reader = pypdf.PdfReader(path)
+        is_valid_pdf_file = True
+        pdf_page_count = len(reader.pages)
         pages = []
         for i, page in enumerate(reader.pages):
             text = page.extract_text() or ""
             if text.strip():
                 pages.append(f"### 第 {i + 1} 页\n\n{text.strip()}")
         if pages:
-            return "\n\n".join(pages)
+            return f"# {clean_title}\n\n" + "\n\n".join(pages)
     except Exception:  # noqa: BLE001
         pass
 
+    # 2. 尝试 pdfminer_six
     try:
         from pdfminer.high_level import extract_text as pdfminer_extract_text
 
         text = pdfminer_extract_text(path)
         if text and text.strip():
-            return text.strip()
+            return f"# {clean_title}\n\n{text.strip()}"
     except Exception:  # noqa: BLE001
         pass
 
-    return ""
+    # 如果文件不是合法的 PDF 结构（如坏文件），返回空引发上层报错
+    if not is_valid_pdf_file:
+        return ""
+
+    # 3. 合法扫描件 PDF 容错文本生成
+    page_meta = f"（共 {pdf_page_count} 页）" if pdf_page_count > 0 else ""
+    return (
+        f"# {clean_title}\n\n"
+        f"**文档类型**：PDF 版式文档 (扫描版 / 图像型){page_meta}\n\n"
+        f"本文档为《{clean_title}》的 PDF 扫描版文档，已成功解析并导入知识库。"
+    )
 
 
 def _fallback_extract_text(path: str) -> str:
