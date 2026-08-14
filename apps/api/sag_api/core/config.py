@@ -138,9 +138,9 @@ class Settings(BaseSettings):
     embedding_dimensions: int | None = None
 
     # ── 文档解析（进入 zleap-sag 前统一转为 Markdown）─────────────────
-    # markitdown：默认微软 MarkItDown 本地解析引擎；可在设置中切换 MinerU 协同。
-    document_parser: Literal["auto", "markitdown", "mineru"] = "markitdown"
-    mineru_base_url: str | None = "http://59.124.3.72:7000"
+    # auto：未配置 mineru_base_url 时走本地 markitdown，配置后端点后开启 MinerU 协同。
+    document_parser: Literal["auto", "markitdown", "mineru"] = "auto"
+    mineru_base_url: str | None = None
     mineru_api_key: str | None = None
     mineru_version: Literal["2.0", "2.5"] = "2.5"
     mineru_parse_method: Literal["auto", "txt", "ocr"] = "auto"
