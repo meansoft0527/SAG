@@ -1,6 +1,11 @@
 """快速单元测试：无需网络 / 引擎。"""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 from types import SimpleNamespace
 
 import pytest
@@ -233,7 +238,12 @@ async def test_installed_litellm_policy_covers_dependency_owned_calls():
 
 
 def test_document_output_redacts_database_details():
-    from datetime import UTC, datetime
+    from datetime import datetime, timezone
+
+    try:
+        from datetime import UTC
+    except ImportError:
+        UTC = timezone.utc
 
     from sag_api.enums import DocumentStatus
     from sag_api.schemas.document import DocumentOut
@@ -521,7 +531,7 @@ def test_prompt_and_citations():
     ]
     msgs = build_messages("谁创立了 Acme？", sections, language="zh")
     assert msgs[0]["role"] == "system"
-    assert "Zleap" in msgs[0]["content"] and "你是 sag" not in msgs[0]["content"]
+    assert "宜智" in msgs[0]["content"] and "你是 sag" not in msgs[0]["content"]
     assert "[1]" in msgs[-1]["content"] and "Acme" in msgs[-1]["content"]
     cites = build_citations(
         sections,

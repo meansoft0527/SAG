@@ -1,10 +1,11 @@
-import { BookOpen, Library, MessageCircle, Search, Sparkles, type LucideIcon } from "lucide-react";
+import { BookOpen, Library, MessageCircle, PenTool, Search, Sparkles, type LucideIcon } from "lucide-react";
 
 import type { WorkspaceSection } from "@/lib/workspace";
 
 const ICONS = {
   search: Search,
   answer: MessageCircle,
+  writer: PenTool,
   knowledge: Library,
   skills: Sparkles,
   wiki: BookOpen,

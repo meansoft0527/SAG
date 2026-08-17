@@ -258,10 +258,14 @@ export function AppSidebar({ contained = false }: { contained?: boolean }) {
             )}
             {threads.map((thread) => {
               const isLive = runningThreads.has(thread.id);
+              const isWriter = thread.title.startsWith("智能写作：") || thread.title.includes("写作");
+              const targetHref = isWriter ? `/writer?thread_id=${thread.id}` : `/chat/${thread.id}`;
+              const isActive = thread.id === activeThreadId || (pathname.includes("thread_id=") && pathname.includes(thread.id));
+
               return (
                 <SidebarMenuItem key={thread.id}>
-                  <SidebarMenuButton asChild isActive={thread.id === activeThreadId}>
-                    <Link href={`/chat/${thread.id}`} aria-label={thread.title}>
+                  <SidebarMenuButton asChild isActive={isActive}>
+                    <Link href={targetHref} aria-label={thread.title}>
                       <span className="min-w-0 flex-1 truncate">{thread.title}</span>
                       {isLive ? (
                         <Spinner

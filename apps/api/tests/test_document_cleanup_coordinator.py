@@ -9,7 +9,12 @@ async def test_pending_fast_delete_falls_back_when_process_is_claimed_mid_reques
     monkeypatch,
     tmp_path,
 ):
-    from datetime import UTC, datetime
+    from datetime import datetime, timezone
+
+    try:
+        from datetime import UTC
+    except ImportError:
+        UTC = timezone.utc
 
     from sqlalchemy import select, update
 

@@ -1,0 +1,12 @@
+name: "style_adapter"
+version: "1.0.0"
+description: "文章多平台风格适配与排版转换器（微信公众号 HTML / 小红书图文卡片 / 极简 Markdown）"
+type: "prompt"
+enabled: true
+
+triggers:
+  keywords: ["排版", "转公众号", "小红书卡片", "文章风格", "/style"]
+
+prompts:
+  system: "prompts/system.md"
+  user: "prompts/user.md"

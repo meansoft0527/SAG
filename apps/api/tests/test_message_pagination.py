@@ -1,6 +1,11 @@
 """消息历史的有界 keyset 分页与 Agent 上下文装载上限。"""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 
 import httpx
 import pytest

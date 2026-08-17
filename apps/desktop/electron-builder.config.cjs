@@ -29,7 +29,7 @@ const publish = githubPublishConfig(updateGitHubRepository)
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId: process.env.SAG_DESKTOP_APP_ID || "ai.zleap.sag",
-  productName: "SAG",
+  productName: "宜智",
   copyright: "Copyright © Zleap AI",
   asar: true,
   compression: "normal",
@@ -96,7 +96,7 @@ module.exports = {
     allowElevation: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
-    shortcutName: "SAG",
+    shortcutName: "宜智",
     differentialPackage: true,
     deleteAppDataOnUninstall: false
   },

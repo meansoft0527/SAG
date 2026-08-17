@@ -53,7 +53,7 @@ async def test_default_agent_activity_and_document_file():
             a1 = (await c.get("/api/v1/agents/default", headers=A)).json()
             a2 = (await c.get("/api/v1/agents/default", headers=A)).json()
             assert a1["id"] == a2["id"] and a1["is_default"] is True
-            assert a1["name"] == "Zleap" and a1["avatar"] == "AI"
+            assert a1["name"] == "宜智" and a1["avatar"] == "宜智"
             async with SessionLocal() as s:
                 defaults = (
                     (await s.execute(select(Agent).where(Agent.is_default.is_(True))))

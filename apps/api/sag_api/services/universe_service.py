@@ -5,7 +5,12 @@ import asyncio
 import hashlib
 import json
 import math
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 from typing import Any
 
 from sqlalchemy import delete, func, select, update

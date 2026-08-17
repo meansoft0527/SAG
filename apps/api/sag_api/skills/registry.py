@@ -31,6 +31,12 @@ class PromptSkill(BaseSkill):
     """基于提示词模板的声明式 Skill。"""
 
     async def execute(self, ctx: SkillContext):
+        if self.skill_type == "workflow":
+            from sag_api.skills.executor import global_skill_executor
+            async for chunk in global_skill_executor._execute_workflow(self, ctx):
+                yield chunk
+            return
+
         prompts = self.config.get("prompts", {})
         sys_file = prompts.get("system")
         user_file = prompts.get("user")

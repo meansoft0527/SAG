@@ -1,6 +1,6 @@
 {
   "Metadata": {
-    "description": "上传信息，创建助手，带引用对话 · 开源知识助手平台"
+    "description": "宜智 · 基于知识库的工作助手"
   },
   "Common": {
     "cancel": "取消",
@@ -80,6 +80,7 @@
   "Navigation": {
     "search": "搜索",
     "answer": "问答",
+    "writer": "智能写作",
     "knowledge": "知识库",
     "skills": "技能扩展",
     "wiki": "自生长 Wiki",
@@ -136,7 +137,7 @@
     "waitingRetry": "等待后台重试"
   },
   "AppSidebar": {
-    "brandTagline": "知识库 Agent",
+    "brandTagline": "基于知识库的工作助手",
     "localIdentity": "本地身份",
     "identitySettings": "本地身份设置",
     "signOut": "退出到启动页",

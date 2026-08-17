@@ -4,11 +4,12 @@ import asyncio
 from collections.abc import AsyncIterator, Mapping, Sequence
 from dataclasses import dataclass, field
 
+from datetime import datetime, timezone
+
 try:
     from datetime import UTC
 except ImportError:
-    UTC = UTC
-from datetime import datetime
+    UTC = timezone.utc
 
 try:
     from enum import StrEnum

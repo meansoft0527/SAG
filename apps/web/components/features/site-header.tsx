@@ -52,6 +52,7 @@ export function SiteHeader() {
   const label = sectionLabel(pathname, {
     search: nav("search"),
     answer: nav("answer"),
+    writer: nav("writer"),
     knowledge: nav("knowledge"),
     settings: nav("settings"),
   });

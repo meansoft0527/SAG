@@ -8,7 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import itertools
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 
 from sqlalchemy import select, update
 from sqlalchemy.exc import OperationalError

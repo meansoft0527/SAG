@@ -1,6 +1,11 @@
 """API 时间戳必须携带时区，避免浏览器把 UTC 误当成本地时间。"""
 
-from datetime import UTC, timedelta
+from datetime import timedelta, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 
 import pytest
 

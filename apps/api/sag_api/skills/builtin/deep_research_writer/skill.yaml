@@ -1,0 +1,33 @@
+name: "deep_research_writer"
+version: "1.0.0"
+description: "基于 SAG 知识库与联网搜索的深度研究写作工作流"
+type: "workflow"
+enabled: true
+
+triggers:
+  keywords: ["深度写作", "研究报告", "深度长文", "知识库写作", "撰写研报", "/deep_research"]
+
+workflow:
+  - step: search_kb
+    tool: search_context
+    input:
+      query: "{{query}}"
+  - step: search_web_latest
+    tool: web_search
+    input:
+      query: "{{query}}"
+  - step: draft_article
+    prompt: |
+      你是一位资深研究员兼高级主笔。请结合以下搜集的知识库片段与联网材料，为主题「{input}」撰写一篇深度、权威、带清晰段落与出处引用的研究文章。
+
+      【知识库资料】：
+      {search_kb}
+
+      【联网最新资料】：
+      {search_web_latest}
+
+      请要求：
+      1. 生成吸引人的主标题与摘要。
+      2. 分小节论述，逻辑递进。
+      3. 在论述中引用知识库 [1], [2] 等证据。
+      4. 给出总结与未来展望。

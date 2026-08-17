@@ -56,7 +56,7 @@ function createTray(): Tray {
     icon = nativeImage.createEmpty();
   }
   const trayInstance = new Tray(icon);
-  trayInstance.setToolTip("SAG 智能知识库");
+  trayInstance.setToolTip("宜智基于知识库的工作助手");
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -158,7 +158,7 @@ function showStartupError(error: unknown): void {
       + `body{margin:0;background:#09090b;color:#fafafa;font:14px system-ui;`
       + `display:grid;place-items:center;min-height:100vh}`
       + `main{max-width:340px;text-align:center}p{color:#a1a1aa;line-height:1.5}`
-      + `</style><main><h2>SAG 启动失败</h2><p>${safeMessage}</p></main>`;
+      + `</style><main><h2>宜智 启动失败</h2><p>${safeMessage}</p></main>`;
   void splashWindow?.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
 }
 

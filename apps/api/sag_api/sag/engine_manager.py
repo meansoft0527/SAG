@@ -20,11 +20,12 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 
+from datetime import datetime, timezone
+
 try:
     from datetime import UTC
 except ImportError:
-    UTC = UTC
-from datetime import datetime
+    UTC = timezone.utc
 from typing import TYPE_CHECKING, Any
 
 try:

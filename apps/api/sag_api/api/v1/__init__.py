@@ -16,6 +16,7 @@ from sag_api.api.v1 import (
     sources,
     system,
     universe,
+    writer,
 )
 from sag_api.connectors_ext.router import router as connectors_ext_router
 from sag_api.skills.router import router as skills_router
@@ -37,6 +38,7 @@ for _module in (
     attachments,
     system,
     universe,
+    writer,
 ):
     api_router.include_router(_module.router)
 

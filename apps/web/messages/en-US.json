@@ -1,6 +1,6 @@
 {
   "Metadata": {
-    "description": "Upload knowledge, create assistants, and chat with citations · Open-source knowledge assistant platform"
+    "description": "YiZhi · Knowledge-base work assistant"
   },
   "Common": {
     "cancel": "Cancel",
@@ -79,10 +79,11 @@
   },
   "Navigation": {
     "search": "Search",
-    "answer": "Chat",
-    "knowledge": "Knowledge",
+    "answer": "Answer",
+    "writer": "Smart Writer",
+    "knowledge": "Knowledge Base",
     "skills": "Skills",
-    "wiki": "Auto-Grow Wiki",
+    "wiki": "Auto-growing Wiki",
     "settings": "Settings"
   },
 
@@ -136,7 +137,7 @@
     "waitingRetry": "Waiting for background retry"
   },
   "AppSidebar": {
-    "brandTagline": "Knowledge Agent",
+    "brandTagline": "Knowledge-Base Work Assistant",
     "localIdentity": "Local identity",
     "identitySettings": "Local identity settings",
     "signOut": "Return to launch page",

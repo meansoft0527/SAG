@@ -9,11 +9,12 @@ from __future__ import annotations
 import asyncio
 import socket
 
+from datetime import datetime, timezone
+
 try:
     from datetime import UTC
 except ImportError:
-    UTC = UTC
-from datetime import datetime
+    UTC = timezone.utc
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urljoin, urlsplit, urlunsplit
