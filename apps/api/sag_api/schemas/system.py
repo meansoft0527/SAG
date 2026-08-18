@@ -60,6 +60,7 @@ class ModelConfigUpdate(BaseModel):
     mineru_base_url: str | None = Field(default=None, max_length=500)
     mineru_api_key: str | None = Field(default=None, max_length=500)
     mineru_version: Literal["2.0", "2.5"] | None = None
+    job_concurrency: int | None = Field(default=None, ge=1, le=10)
     document_extract_concurrency: int | None = Field(default=None, ge=1, le=50)
     document_chunk_max_tokens: int | None = Field(default=None, ge=100, le=100_000)
     document_chunk_mode: Literal["standard", "heading_strict"] | None = None
@@ -75,7 +76,7 @@ class ModelConfigUpdate(BaseModel):
             raise ValueError("解析器与 MinerU 版本不能为 null")
         return value
 
-    @field_validator("document_extract_concurrency", "document_chunk_max_tokens")
+    @field_validator("job_concurrency", "document_extract_concurrency", "document_chunk_max_tokens")
     @classmethod
     def reject_null_document_numbers(cls, value: int | None) -> int:
         if value is None:

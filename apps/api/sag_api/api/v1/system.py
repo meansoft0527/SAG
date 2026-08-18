@@ -175,9 +175,8 @@ async def update_model_config(
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """保存运行期配置；仅在模型/向量配置实际变化时安全重建引擎。"""
-    patch = body.model_dump(exclude_unset=True)
-    before = settings_service.effective_model_config()
-    config = await settings_service.save_model_config(session, patch)
+    job_queue = getattr(request.app.state, "job_queue", None)
+    config = await settings_service.save_model_config(session, patch, job_queue=job_queue)
 
     # 解析器/检索参数保存无需打断暖引擎；只有引擎配置真的变化才安全重建。
     engine_fields = {

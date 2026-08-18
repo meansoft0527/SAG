@@ -631,6 +631,30 @@ class InProcessAsyncQueue(JobQueue):
         self._retry_tasks.add(task)
         task.add_done_callback(self._retry_tasks.discard)
 
+    def set_concurrency(self, concurrency: int) -> None:
+        """运行期动态调整队列 Worker 并发数。"""
+        target = max(1, min(10, concurrency))
+        if self._concurrency == target:
+            return
+        old_concurrency = self._concurrency
+        self._concurrency = target
+        if not self._started:
+            return
+
+        current_count = len(self._workers)
+        if target > current_count:
+            for i in range(current_count, target):
+                self._workers.append(
+                    asyncio.create_task(self._worker_loop(i), name=f"sag-worker-{i}")
+                )
+            log.info("动态扩展任务队列并发 worker：%d -> %d", old_concurrency, target)
+        elif target < current_count:
+            to_remove = self._workers[target:]
+            self._workers = self._workers[:target]
+            for worker in to_remove:
+                worker.cancel()
+            log.info("动态收缩任务队列并发 worker：%d -> %d", old_concurrency, target)
+
     async def start(self) -> None:
         if self._started:
             return

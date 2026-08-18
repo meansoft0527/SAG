@@ -178,6 +178,7 @@ export interface ModelConfig {
   mineru_version: "2.0" | "2.5";
   mineru_api_key_set: boolean;
   effective_document_parser: EffectiveDocumentParser;
+  job_concurrency?: number;
   document_extract_concurrency: number;
   document_chunk_max_tokens: number;
   document_chunk_mode: "standard" | "heading_strict";
@@ -206,6 +207,7 @@ export type ModelConfigPatch = Partial<{
   mineru_base_url: string | null;
   mineru_version: "2.0" | "2.5";
   mineru_api_key: string;
+  job_concurrency: number;
   document_extract_concurrency: number;
   document_chunk_max_tokens: number;
   document_chunk_mode: "standard" | "heading_strict";

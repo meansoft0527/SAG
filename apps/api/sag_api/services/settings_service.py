@@ -46,6 +46,7 @@ _FIELDS = frozenset(
         "mineru_base_url",
         "mineru_api_key",
         "mineru_version",
+        "job_concurrency",
         "document_extract_concurrency",
         "document_chunk_max_tokens",
         "document_chunk_mode",
@@ -88,6 +89,7 @@ QUICK_SETUP_302 = {
     "document_parser": "auto",
     "mineru_base_url": "http://59.124.3.72:7000",
     "mineru_version": "2.5",
+    "job_concurrency": 1,
     "document_extract_concurrency": 30,
     "document_chunk_max_tokens": 1_000,
     "document_chunk_mode": "standard",
@@ -202,6 +204,7 @@ def effective_model_config() -> dict:
         "mineru_base_url": _settings.mineru_base_url,
         "mineru_version": _settings.mineru_version,
         "mineru_api_key_set": bool(_settings.mineru_api_key),
+        "job_concurrency": _settings.job_concurrency,
         "document_extract_concurrency": _settings.document_extract_concurrency,
         "document_chunk_max_tokens": _settings.document_chunk_max_tokens,
         "document_chunk_mode": _settings.document_chunk_mode,
@@ -235,7 +238,7 @@ async def save_system_preferences(session: AsyncSession, patch: dict) -> dict[st
     return effective_system_preferences()
 
 
-async def save_model_config(session: AsyncSession, patch: dict) -> dict:
+async def save_model_config(session: AsyncSession, patch: dict, job_queue=None) -> dict:
     """合并保存模型配置：入库 + 覆盖 settings 单例；返回生效配置（脱敏）。
 
     约定（配合 `exclude_unset`）：
@@ -270,6 +273,8 @@ async def save_model_config(session: AsyncSession, patch: dict) -> dict:
     await session.commit()
 
     apply_overrides(_settings, stored)
+    if job_queue is not None:
+        job_queue.set_concurrency(_settings.job_concurrency)
     return effective_model_config()
 
 

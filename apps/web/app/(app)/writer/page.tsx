@@ -47,6 +47,7 @@ import {
 } from "@/components/features/chat/agent-activity-timeline";
 import { CitationBlock } from "@/components/features/chat/citation-block";
 import { useDetailPanel } from "@/components/features/detail-panel";
+import { MarkdownContent } from "@/components/features/markdown-content";
 import { Button } from "@/components/ui/button";
 
 // 消息结构
@@ -1523,36 +1524,12 @@ export default function ConversationalWriterPage() {
                   className="w-full h-full min-h-[400px] font-mono text-xs leading-relaxed bg-transparent focus:outline-none resize-none"
                 />
               ) : docContent ? (
-                <div className="prose prose-neutral dark:prose-invert max-w-none space-y-4 text-xs leading-relaxed">
-                  {docContent.split("\n").map((paragraph, index) => {
-                    if (paragraph.startsWith("# ")) {
-                      return (
-                        <h1 key={index} className="text-xl font-bold tracking-tight text-foreground border-b pb-2">
-                          {paragraph.replace("# ", "")}
-                        </h1>
-                      );
-                    }
-                    if (paragraph.startsWith("## ")) {
-                      return (
-                        <h2 key={index} className="text-base font-semibold text-primary pt-3">
-                          {paragraph.replace("## ", "")}
-                        </h2>
-                      );
-                    }
-                    if (paragraph.startsWith("### ")) {
-                      return (
-                        <h3 key={index} className="text-xs font-medium text-foreground">
-                          {paragraph.replace("### ", "")}
-                        </h3>
-                      );
-                    }
-                    if (!paragraph.trim()) return null;
-                    return (
-                      <p key={index} className="text-foreground/90 whitespace-pre-wrap">
-                        {paragraph}
-                      </p>
-                    );
-                  })}
+                <div className="space-y-4">
+                  <MarkdownContent
+                    content={docContent}
+                    citations={docCitations}
+                    onCitationClick={handleOpenCitationDetail}
+                  />
 
                   {/* 文章末尾渲染对话模块同款原生的【CitationBlock 引用来源折叠卡片】 */}
                   {docCitations.length > 0 && (

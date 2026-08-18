@@ -30,8 +30,12 @@ class JobQueue(ABC):
     async def finish_source_maintenance(self, source_id: str, job_id: str) -> None:
         """结束维护任务；最后一个维护任务结束后唤醒临时让行的任务。"""
 
+    def set_concurrency(self, concurrency: int) -> None:  # noqa: B027
+        """动态调整队列 Worker 并发数。"""
+
     async def start(self) -> None:  # noqa: B027 - 可选生命周期钩子
         """启动后台 worker（如有）。"""
 
     async def stop(self) -> None:  # noqa: B027
         """优雅停止 worker。"""
+

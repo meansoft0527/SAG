@@ -42,6 +42,7 @@ export function KnowledgeConfigForm() {
   const [chunkMaxTokens, setChunkMaxTokens] = React.useState(1_000);
   const [chunkMode, setChunkMode] =
     React.useState<ModelConfig["document_chunk_mode"]>("standard");
+  const [jobConcurrency, setJobConcurrency] = React.useState(1);
   const [extractConcurrency, setExtractConcurrency] = React.useState(30);
   const [strategy, setStrategy] = React.useState<ModelConfig["search_strategy"]>("multi");
   const [topK, setTopK] = React.useState(8);
@@ -50,6 +51,7 @@ export function KnowledgeConfigForm() {
   const hydrate = React.useCallback((config: ModelConfig) => {
     setChunkMaxTokens(config.document_chunk_max_tokens ?? 1_000);
     setChunkMode(config.document_chunk_mode ?? "standard");
+    setJobConcurrency(config.job_concurrency ?? 1);
     setExtractConcurrency(config.document_extract_concurrency ?? 30);
     setStrategy(config.search_strategy);
     setTopK(config.search_top_k);
@@ -76,6 +78,7 @@ export function KnowledgeConfigForm() {
       const patch: ModelConfigPatch = {
         document_chunk_max_tokens: chunkMaxTokens,
         document_chunk_mode: chunkMode,
+        job_concurrency: jobConcurrency,
         document_extract_concurrency: extractConcurrency,
         search_strategy: strategy,
         search_top_k: topK,
@@ -178,6 +181,22 @@ export function KnowledgeConfigForm() {
 
         <SettingsRow title={t("extractionSettings")} description={t("extractionDescription")}>
           <div className="grid gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="kb-job-concurrency">{t("jobConcurrency")}</FieldLabel>
+              <Input
+                id="kb-job-concurrency"
+                type="number"
+                min={1}
+                max={10}
+                value={jobConcurrency}
+                onChange={(event) =>
+                  setJobConcurrency(
+                    Math.min(10, Math.max(1, Number(event.target.value) || 1)),
+                  )
+                }
+              />
+              <FieldDescription>{t("jobConcurrencyDescription")}</FieldDescription>
+            </Field>
             <Field>
               <FieldLabel htmlFor="kb-extract-concurrency">{t("concurrency")}</FieldLabel>
               <Input
